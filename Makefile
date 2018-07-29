@@ -7,6 +7,8 @@ prep:
 self:   prep rmdeps
 	if test -d src; then rm -rf src; fi
 	mkdir -p src/github.com/whosonfirst/go-whosonfirst-dist-publish
+	cp *.go src/github.com/whosonfirst/go-whosonfirst-dist-publish/
+	cp -r publisher src/github.com/whosonfirst/go-whosonfirst-dist-publish/
 	cp -r vendor/* src/
 
 rmdeps:
@@ -26,8 +28,9 @@ vendor-deps: rmdeps deps
 	rm -rf src
 
 fmt:
-	# go fmt *.go
+	go fmt *.go
 	go fmt cmd/*.go
+	go fmt publisher/*.go
 
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-publish cmd/wof-dist-publish.go

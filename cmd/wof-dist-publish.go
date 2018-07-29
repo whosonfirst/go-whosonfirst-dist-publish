@@ -12,8 +12,9 @@ import (
 	"fmt"
 	// "github.com/tidwall/pretty"
 	"github.com/whosonfirst/go-whosonfirst-dist"
+	"github.com/whosonfirst/go-whosonfirst-dist-publish"	
+	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
 	"github.com/whosonfirst/go-whosonfirst-repo"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -24,7 +25,8 @@ import (
 )
 
 type PublishOptions struct {
-	Workdir string
+	Workdir   string
+	Publisher publish.Publisher
 }
 
 func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
@@ -159,7 +161,7 @@ func publishFile(source string, dest string, opts *PublishOptions) error {
 
 	defer fh.Close()
 
-	return publish(fh, dest, opts)
+	return opts.Publisher.Publish(fh, dest)
 }
 
 func publishBytes(b []byte, dest string, opts *PublishOptions) error {
@@ -167,23 +169,28 @@ func publishBytes(b []byte, dest string, opts *PublishOptions) error {
 	r := bytes.NewReader(b)
 	fh := ioutil.NopCloser(r)
 
-	return publish(fh, dest, opts)
-}
+	return opts.Publisher.Publish(fh, dest)
 
-func publish(r io.ReadCloser, dest string, opts *PublishOptions) error {
-
-	log.Println("publish to", dest)
-	return nil
 }
 
 func main() {
 
 	workdir := flag.String("workdir", "", "Where to store temporary and final build files. If empty the code will attempt to use the current working directory.")
 
+	// pub := flag.String("publisher", "s3", "...")
+	dsn := flag.String("publisher-dsn", "", "...")
+
 	flag.Parse()
 
+	p, err := publisher.NewS3PublisherFromDSN(*dsn)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	opts := &PublishOptions{
-		Workdir: *workdir,
+		Workdir:   *workdir,
+		Publisher: p,
 	}
 
 	for _, repo_name := range flag.Args() {
