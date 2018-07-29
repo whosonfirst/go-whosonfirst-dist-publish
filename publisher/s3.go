@@ -1,9 +1,11 @@
 package publisher
 
 import (
+	"fmt"
 	"github.com/whosonfirst/go-whosonfirst-aws/s3"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish"
 	"io"
+	_ "log"
 )
 
 type S3Publisher struct {
@@ -39,5 +41,6 @@ func NewS3Publisher(cfg *s3.S3Config) (publish.Publisher, error) {
 
 func (p *S3Publisher) Publish(fh io.ReadCloser, dest string) error {
 
-	return p.conn.Put(dest, fh)
+	key := fmt.Sprintf("%s#ACL=public-read", dest)
+	return p.conn.Put(key, fh)
 }

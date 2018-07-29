@@ -16,6 +16,43 @@ All of this package's dependencies are bundled with the code in the `vendor` dir
 
 This doesn't work yet.
 
+## Tools
+
+### wof-dist-publish
+
+```
+./bin/wof-dist-publish -h
+Usage of ./bin/wof-dist-publish:
+  -publisher string
+    	Valid publishers are: s3 (default "s3")
+  -publisher-dsn string
+    	A valid DSN string for your distribution publisher
+  -workdir string
+    	Where to read build files from. If empty the code will attempt to use the current working directory.
+```
+
+For example:
+
+```
+$> ./bin/wof-dist-publish -workdir /path/to/workdir -dsn 'bucket=BUCKET region={REGION} prefix={PREFIX} credentials={CREDENTIALS}' <repo>...
+```
+
+## DSN strings
+
+### S3
+
+```
+bucket=BUCKET region={REGION} prefix={PREFIX} credentials={CREDENTIALS}
+```
+
+Valid credentials strings are:
+
+* `env:`
+
+* `iam:`
+
+* `{PATH}:{PROFILE}`
+
 ## See also:
 
 * https://github.com/whosonfirst/go-whosonfirst-dist

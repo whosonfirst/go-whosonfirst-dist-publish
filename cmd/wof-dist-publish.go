@@ -34,7 +34,7 @@ func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
 	t1 := time.Now()
 
 	defer func() {
-		log.Println("time to publish inventory %v", time.Since(t1))
+		log.Printf("time to publish inventory %v\n", time.Since(t1))
 	}()
 
 	wg := new(sync.WaitGroup)
@@ -116,6 +116,8 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 	inv_ts := dest_ts + ".json"
 	inv_latest := dest_latest + ".json"
 
+	// TO DO MAKE A COPY OF ITEM WITH THE CORRECT timestamp NAMES
+
 	i, err := json.Marshal(item)
 
 	if err != nil {
@@ -174,17 +176,29 @@ func publishBytes(b []byte, dest string, opts *PublishOptions) error {
 
 func main() {
 
-	workdir := flag.String("workdir", "", "Where to store temporary and final build files. If empty the code will attempt to use the current working directory.")
+	workdir := flag.String("workdir", "", "Where to read build files from. If empty the code will attempt to use the current working directory.")
 
-	// pub := flag.String("publisher", "s3", "...")
-	dsn := flag.String("publisher-dsn", "", "...")
+	pub := flag.String("publisher", "s3", "Valid publishers are: s3")
+	dsn := flag.String("publisher-dsn", "", "A valid DSN string for your distribution publisher.")
 
 	flag.Parse()
 
-	p, err := publisher.NewS3PublisherFromDSN(*dsn)
+	var p publish.Publisher
 
-	if err != nil {
-		log.Fatal(err)
+	switch *pub {
+
+	case "s3":
+
+		s3_p, err := publisher.NewS3PublisherFromDSN(*dsn)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		p = s3_p
+
+	default:
+		log.Fatal("Invalid publisher")
 	}
 
 	opts := &PublishOptions{
