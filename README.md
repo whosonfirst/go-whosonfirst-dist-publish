@@ -1,6 +1,6 @@
 # go-whosonfirst-dist-publish
 
-Go package for working with Who's On First distributions.
+Go package for publishing Who's On First distributions.
 
 ## Install
 
@@ -14,7 +14,7 @@ All of this package's dependencies are bundled with the code in the `vendor` dir
 
 ## Important
 
-This doesn't work yet.
+This doesn't work yet. Strictly speaking it does work but I might break everything still so all the usual caveats apply.
 
 ## Tools
 
