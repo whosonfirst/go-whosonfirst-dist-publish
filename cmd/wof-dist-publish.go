@@ -10,9 +10,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	// "github.com/tidwall/pretty"
+	"github.com/tidwall/pretty"
 	"github.com/whosonfirst/go-whosonfirst-dist"
-	"github.com/whosonfirst/go-whosonfirst-dist-publish"	
+	"github.com/whosonfirst/go-whosonfirst-dist-publish"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"io/ioutil"
@@ -122,7 +122,7 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 		return err
 	}
 
-	// i = pretty.Pretty(i)
+	i = pretty.Pretty(i)
 
 	err = publishFile(source, dest_ts, opts)
 
@@ -170,7 +170,6 @@ func publishBytes(b []byte, dest string, opts *PublishOptions) error {
 	fh := ioutil.NopCloser(r)
 
 	return opts.Publisher.Publish(fh, dest)
-
 }
 
 func main() {

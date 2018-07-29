@@ -20,6 +20,7 @@ deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-dist"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-repo"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-aws/..."
+	mv src/github.com/whosonfirst/go-whosonfirst-dist/vendor/github.com/tidwall src/github.com/
 
 vendor-deps: rmdeps deps
 	if test -d vendor; then rm -rf vendor; fi
