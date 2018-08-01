@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"github.com/whosonfirst/go-whosonfirst-aws/s3"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish"
+	"github.com/whosonfirst/go-whosonfirst-repo"
 	"io"
-	_ "log"
+	"log"
 )
 
 type S3Publisher struct {
@@ -43,4 +44,20 @@ func (p *S3Publisher) Publish(fh io.ReadCloser, dest string) error {
 
 	key := fmt.Sprintf("%s#ACL=public-read", dest)
 	return p.conn.Put(key, fh)
+}
+
+func (p *S3Publisher) Prune(r repo.Repo) error {
+
+	cb := func(obj *s3.S3Object) error {
+		log.Println(obj.Key)
+		return nil
+	}
+
+	err := p.conn.List(cb)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

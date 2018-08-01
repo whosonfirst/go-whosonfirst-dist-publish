@@ -17,21 +17,17 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/whosonfirst/go-whosonfirst-mimetypes"
 	"io"
+	"io/ioutil"
 	_ "log"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 )
-
-type nopCloser struct {
-	io.Reader
-}
-
-func (nopCloser) Close() error { return nil }
 
 func ReadCloserFromBytes(b []byte) (io.ReadCloser, error) {
 	body := bytes.NewReader(b)
-	return nopCloser{body}, nil
+	return ioutil.NopCloser(body), nil
 }
 
 type S3Connection struct {
@@ -47,6 +43,19 @@ type S3Config struct {
 	Region      string
 	Credentials string // see notes below
 }
+
+// this is a nearly straight clone of the core S3 object and
+// exists so that people don't have to (re) load all of the
+// aws-sdk-go code in their packages (20180801/thisisaaronland)
+
+type S3Object struct {
+	Key          string
+	Size         int64
+	LastModified time.Time
+	ETag         string
+}
+
+type S3ListCallback func(*S3Object) error
 
 func ValidS3Credentials() []string {
 
@@ -358,6 +367,49 @@ func (conn *S3Connection) Delete(key string) error {
 	}
 
 	_, err := conn.service.DeleteObject(params)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (conn *S3Connection) List(cb S3ListCallback) error {
+
+	params := &s3.ListObjectsInput{
+		Bucket: aws.String(conn.bucket),
+		Prefix: aws.String(conn.prefix),
+		// Delimiter: "baz",
+	}
+
+	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/#ListObjectsOutput
+	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/#Object
+
+	aws_cb := func(rsp *s3.ListObjectsOutput, last_page bool) bool {
+
+		for _, aws_obj := range rsp.Contents {
+
+			obj := S3Object{
+				Key:          *aws_obj.Key,
+				Size:         *aws_obj.Size,
+				ETag:         *aws_obj.ETag,
+				LastModified: *aws_obj.LastModified,
+			}
+
+			err := cb(&obj)
+
+			if err != nil {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/#example_S3_ListObjects_shared00
+
+	err := conn.service.ListObjectsPages(params, aws_cb)
 
 	if err != nil {
 		return err

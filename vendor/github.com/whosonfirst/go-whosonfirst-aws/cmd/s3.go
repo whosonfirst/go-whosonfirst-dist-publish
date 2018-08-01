@@ -64,6 +64,15 @@ func main() {
 
 			rsp, err = conn.Get(path)
 
+		case "LIST":
+
+			cb := func(obj *s3.S3Object) error {
+				log.Println(obj.Key)
+				return nil
+			}
+			
+			err = conn.List(cb)
+
 		case "PUT":
 
 			parsed := strings.Split(path, "#")
