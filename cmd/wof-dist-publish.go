@@ -143,7 +143,9 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 	// make sure the pointers in the inventory file point
 	// to the relevant distributions
 
-	item.Name = n_ts
+	// only tweak the compressed name since it will still uncompress
+	// with the -latest suffix (20180802/thisisaaronland)
+	
 	item.NameCompressed = nc_ts
 
 	enc_ts, err := json.Marshal(item)
