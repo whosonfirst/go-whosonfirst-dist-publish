@@ -78,8 +78,8 @@ func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
 
 func PublishItem(item *dist.Item, opts *PublishOptions) error {
 
-	n := item.NameCompressed
-	t := item.Type
+	n := item.Name
+	nc := item.NameCompressed
 
 	lu, err := time.Parse(time.RFC3339, item.LastUpdate)
 
@@ -88,10 +88,13 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 	}
 
 	suffix := fmt.Sprintf("-%d.", lu.Unix())
+
 	n_ts := strings.Replace(n, "-latest.", suffix, -1)
+	nc_ts := strings.Replace(nc, "-latest.", suffix, -1)
 
 	// what is NewDistributionTypeFromString(t) ...
 
+	t := item.Type
 	t = strings.Replace(t, "x-urn:whosonfirst:", "", -1)
 
 	var prefix string
@@ -99,7 +102,7 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 	// this will all be made less-shit...
 
 	if strings.HasPrefix(t, "csv:meta") {
-		prefix = "bundles"
+		prefix = "meta"
 	} else if strings.HasPrefix(t, "database:sqlite") {
 		prefix = "sqlite"
 	} else if strings.HasPrefix(t, "fs:bundle") {
@@ -108,31 +111,12 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 		return errors.New("Invalid or unsupported prefix")
 	}
 
-	source := filepath.Join(opts.Workdir, n)
+	source := filepath.Join(opts.Workdir, nc)
 
-	dest_ts := filepath.Join(prefix, n_ts)
-	dest_latest := filepath.Join(prefix, n)
-
-	inv_ts := dest_ts + ".json"
-	inv_latest := dest_latest + ".json"
-
-	// TO DO MAKE A COPY OF ITEM WITH THE CORRECT timestamp NAMES
-
-	i, err := json.Marshal(item)
-
-	if err != nil {
-		return err
-	}
-
-	i = pretty.Pretty(i)
+	dest_ts := filepath.Join(prefix, nc_ts)
+	dest_latest := filepath.Join(prefix, nc)
 
 	err = publishFile(source, dest_ts, opts)
-
-	if err != nil {
-		return err
-	}
-
-	err = publishBytes(i, inv_ts, opts)
 
 	if err != nil {
 		return err
@@ -144,7 +128,40 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 		return err
 	}
 
-	err = publishBytes(i, inv_latest, opts)
+	// publish the inventory files
+
+	inv_ts := dest_ts + ".json"
+	inv_latest := dest_latest + ".json"
+
+	enc_latest, err := json.Marshal(item)
+
+	if err != nil {
+		return err
+	}
+
+	// quick! look over there!!
+	// make sure the pointers in the inventory file point
+	// to the relevant distributions
+
+	item.Name = n_ts
+	item.NameCompressed = nc_ts
+
+	enc_ts, err := json.Marshal(item)
+
+	if err != nil {
+		return err
+	}
+
+	enc_latest = pretty.Pretty(enc_latest)
+	enc_ts = pretty.Pretty(enc_ts)
+
+	err = publishBytes(enc_ts, inv_ts, opts)
+
+	if err != nil {
+		return err
+	}
+
+	err = publishBytes(enc_latest, inv_latest, opts)
 
 	if err != nil {
 		return err

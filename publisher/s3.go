@@ -7,6 +7,7 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"io"
 	"log"
+	"time"
 )
 
 type S3Publisher struct {
@@ -43,6 +44,13 @@ func NewS3Publisher(cfg *s3.S3Config) (publish.Publisher, error) {
 func (p *S3Publisher) Publish(fh io.ReadCloser, dest string) error {
 
 	key := fmt.Sprintf("%s#ACL=public-read", dest)
+
+	t1 := time.Now()
+
+	defer func() {
+		log.Printf("time to publish %s: %v\n", key, time.Since(t1))
+	}()
+
 	return p.conn.Put(key, fh)
 }
 
