@@ -60,25 +60,8 @@ func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
 	return nil
 }
 
-/*
-
-  {
-      "name": "whosonfirst-data-constituency-us-latest.csv",
-      "type": "x-urn:whosonfirst:csv:meta#constituency",
-      "name_compressed": "whosonfirst-data-constituency-us-latest.csv.bz2",
-      "count": 7184,
-      "size": 2227902,
-      "size_compressed": 524455,
-      "sha256_compressed": "9cff892bb4a5317a1bcad1c88755b74e0a8415134e5c0de41cc14507594c0eb1",
-      "last_updated": "2018-07-24T15:05:33Z",
-      "lastmodified": "2018-07-28T15:46:22Z"
-   }
-
-*/
-
 func PublishItem(item *dist.Item, opts *PublishOptions) error {
 
-	n := item.Name
 	nc := item.NameCompressed
 
 	lu, err := time.Parse(time.RFC3339, item.LastUpdate)
@@ -89,7 +72,6 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 
 	suffix := fmt.Sprintf("-%d.", lu.Unix())
 
-	n_ts := strings.Replace(n, "-latest.", suffix, -1)
 	nc_ts := strings.Replace(nc, "-latest.", suffix, -1)
 
 	// what is NewDistributionTypeFromString(t) ...
@@ -145,7 +127,7 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 
 	// only tweak the compressed name since it will still uncompress
 	// with the -latest suffix (20180802/thisisaaronland)
-	
+
 	item.NameCompressed = nc_ts
 
 	enc_ts, err := json.Marshal(item)
