@@ -35,3 +35,4 @@ fmt:
 
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-publish cmd/wof-dist-publish.go
+	@GOPATH=$(GOPATH) go build -o bin/wof-dist-prune cmd/wof-dist-prune.go

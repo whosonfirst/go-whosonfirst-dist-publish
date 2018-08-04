@@ -5,6 +5,7 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-dist-publish"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
 	"github.com/whosonfirst/go-whosonfirst-repo"
+	"log"
 )
 
 func PruneInventory(p publish.Publisher, r repo.Repo) error {
@@ -12,8 +13,6 @@ func PruneInventory(p publish.Publisher, r repo.Repo) error {
 }
 
 func main() {
-
-	flag.Parse()
 
 	pub := flag.String("publisher", "s3", "Valid publishers are: s3")
 	dsn := flag.String("publisher-dsn", "", "A valid DSN string for your distribution publisher.")
@@ -46,6 +45,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		PruneInventory(p, repo)
+		p.Prune(r)
 	}
 }
