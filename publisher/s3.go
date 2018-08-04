@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,6 +30,7 @@ func init() {
 type S3Publisher struct {
 	publish.Publisher
 	conn *s3.S3Connection
+	cfg  *s3.S3Config
 }
 
 func NewS3PublisherFromDSN(dsn string) (publish.Publisher, error) {
@@ -51,6 +54,7 @@ func NewS3Publisher(cfg *s3.S3Config) (publish.Publisher, error) {
 
 	p := S3Publisher{
 		conn: conn,
+		cfg:  cfg,
 	}
 
 	return &p, nil
@@ -69,11 +73,108 @@ func (p *S3Publisher) Publish(fh io.ReadCloser, dest string) error {
 	return p.conn.Put(key, fh)
 }
 
+// THIS NEEDS OPTIONS AND FLAGS
+// IT IS NOT CLEAR THIS NEEDS OR SHOULD BE A repo.Repo THINGY
+
 func (p *S3Publisher) Prune(r repo.Repo) error {
 
 	max_pubs := 1 // sudo make me a config option somewhere...
 
-	// See this? It's ugly as all get out
+	// grouped is a make(map[string]map[string][]*s3.S3Object)
+	// which is not ideal but it's also too soon to optimize...
+
+	grouped, err := p.group(r)
+
+	if err != nil {
+		return err
+	}
+
+	to_prune := make([]*s3.S3Object, 0)
+
+	for _, details := range grouped {
+
+		pubdates := make([]int, 0)
+
+		for str_ts, _ := range details {
+
+			ts, err := strconv.Atoi(str_ts)
+
+			if err != nil {
+				return err
+			}
+
+			pubdates = append(pubdates, ts)
+		}
+
+		count := len(pubdates)
+
+		if count <= max_pubs {
+			continue
+		}
+
+		sort.Sort(sort.Reverse(sort.IntSlice(pubdates)))
+		// log.Println(repo_name, pubdates)
+
+		for i := max_pubs; i < count; i++ {
+
+			ts := pubdates[i]
+			str_ts := strconv.Itoa(ts)
+
+			for _, obj := range details[str_ts] {
+				to_prune = append(to_prune, obj)
+			}
+		}
+
+	}
+
+	// we are using a waitgroup rather than channels so if there's a
+	// problem then it will only be logged and not stop the execution
+	// of other deletions - obviously the code will need to be changed
+	// if that's a problem some day... (20180804/thisisaaronland)
+
+	wg := new(sync.WaitGroup)
+
+	for _, obj := range to_prune {
+
+		wg.Add(1)
+
+		go func(obj *s3.S3Object) {
+
+			defer wg.Done()
+
+			key := obj.Key
+
+			// See this? It sucks. It is also necessary until I decide and make
+			// the changes to the go-whosonfirst-aws/s3:List method to strip
+			// prefixes... (20180804/thisisaaronland)
+
+			if p.cfg.Prefix != "" {
+
+				prefix := fmt.Sprintf("%s/", p.cfg.Prefix)
+
+				if strings.HasPrefix(key, prefix) {
+					key = strings.Replace(key, prefix, "", -1)
+				}
+			}
+
+			err := p.conn.Delete(key)
+
+			if err != nil {
+				log.Printf("Failed to delete %s because %s", key, err)
+			}
+
+		}(obj)
+	}
+
+	wg.Wait()
+
+	return nil
+}
+
+// this is its own method because we'll probably need and want it for generating
+// index pages
+
+func (p *S3Publisher) group(r repo.Repo) (map[string]map[string][]*s3.S3Object, error) {
 
 	grouped := make(map[string]map[string][]*s3.S3Object)
 
@@ -96,9 +197,7 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 
 		group := m[0][1]
 
-		// FIX ME TO ACCOUNT FOR REPO-{PLACETYPE}...
-
-		if group != r.Name() {
+		if !strings.HasPrefix(group, r.Name()) {
 			return nil
 		}
 
@@ -113,53 +212,14 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 		by_ts[str_ts] = append(by_ts[str_ts], obj)
 
 		grouped[group] = by_ts
-
-		log.Println(obj.Key, group, str_ts)
 		return nil
 	}
 
 	err := p.conn.List(cb)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for repo_name, details := range grouped {
-
-		pubdates := make([]int, 0)
-
-		for str_ts, _ := range details {
-
-			ts, err := strconv.Atoi(str_ts)
-
-			if err != nil {
-				return err
-			}
-
-			pubdates = append(pubdates, ts)
-		}
-
-		log.Println(repo_name, pubdates)
-
-		count := len(pubdates)
-
-		if count <= max_pubs {
-			continue
-		}
-
-		sort.Sort(sort.Reverse(sort.IntSlice(pubdates)))
-
-		for i := max_pubs; i < count; i++ {
-
-			ts := pubdates[i]
-			str_ts := strconv.Itoa(ts)
-
-			for _, obj := range details[str_ts] {
-				log.Println("PRUNE", repo_name, obj.Key)
-			}
-		}
-
-	}
-
-	return nil
+	return grouped, nil
 }
