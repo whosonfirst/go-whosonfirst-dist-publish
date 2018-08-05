@@ -16,42 +16,49 @@ All of this package's dependencies are bundled with the code in the `vendor` dir
 
 This doesn't work yet. Strictly speaking it does work but I might break everything still so all the usual caveats apply.
 
-## Tools
-
-### wof-dist-publish
+## For example
 
 ```
-./bin/wof-dist-publish -h
-Usage of ./bin/wof-dist-publish:
-  -publisher string
-    	Valid publishers are: s3 (default "s3")
-  -publisher-dsn string
-    	A valid DSN string for your distribution publisher
-  -workdir string
-    	Where to read build files from. If empty the code will attempt to use the current working directory.
+#!/bin/sh
+
+LIST_REPOS="/usr/local/whosonfirst/go-whosonfirst-github/bin/wof-list-repos"
+BUILD_DIST="/usr/local/whosonfirst/go-whosonfirst-dist/bin/wof-dist-build"
+PUBLISH_DIST="/usr/local/whosonfirst/go-whosonfirst-dist-publish/bin/wof-dist-publish"
+PRUNE_DIST="/usr/local/whosonfirst/go-whosonfirst-dist-publish/bin/wof-dist-prune"
+
+PUBLISHER="s3"
+
+# I am too dumb to make this work...
+# PUBLISHER_DSN="bucket=dist.whosonfirst.org region=us-east-2 prefix=test credentials=iam:"
+
+# So we'll just do it the long way...
+
+S3_BUCKET="dist.whosonfirst.org"
+S3_REGION="us-east-2"
+S3_PREFIX="test"
+S3_CREDENTIALS="iam:"
+
+WORKDIR="/usr/local/data/dist"
+
+for REPO in `${LIST_REPOS} -not-forked -updated-since P1D`
+do
+    
+    echo "rebuild distributions for ${REPO}"
+    
+    ${BUILD_DIST} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
+
+    echo "publish distributions for ${REPO}"
+    
+    ${PUBLISH_DIST} -workdir ${WORKDIR} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" ${REPO}
+
+done
+
+echo "prune distributions"
+
+${PRUNE_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+    
+echo "INDEX ME... (translation: please write me)"
 ```
-
-For example:
-
-```
-$> ./bin/wof-dist-publish -workdir /path/to/workdir -dsn 'bucket=BUCKET region={REGION} prefix={PREFIX} credentials={CREDENTIALS}' <repo>...
-```
-
-## DSN strings
-
-### S3
-
-```
-bucket=BUCKET region={REGION} prefix={PREFIX} credentials={CREDENTIALS}
-```
-
-Valid credentials strings are:
-
-* `env:`
-
-* `iam:`
-
-* `{PATH}:{PROFILE}`
 
 ## See also:
 
