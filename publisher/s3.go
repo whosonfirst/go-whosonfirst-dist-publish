@@ -185,6 +185,8 @@ func (p *S3Publisher) group(r repo.Repo) (map[string]map[string][]*s3.S3Object, 
 	//    - ...csv.bz2
 	//    - ...db.bz2
 
+	mu := new(sync.RWMutex)
+
 	cb := func(obj *s3.S3Object) error {
 
 		fname := filepath.Base(obj.Key)
@@ -202,6 +204,9 @@ func (p *S3Publisher) group(r repo.Repo) (map[string]map[string][]*s3.S3Object, 
 		}
 
 		str_ts := m[0][2]
+
+		mu.Lock()
+		defer mu.Unlock()
 
 		by_ts, ok := grouped[group]
 
