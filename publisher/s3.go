@@ -215,7 +215,8 @@ func (p *S3Publisher) group(r repo.Repo) (map[string]map[string][]*s3.S3Object, 
 		return nil
 	}
 
-	err := p.conn.List(cb)
+	opts := s3.DefaultS3ListOptions()
+	err := p.conn.List(cb, opts)
 
 	if err != nil {
 		return nil, err

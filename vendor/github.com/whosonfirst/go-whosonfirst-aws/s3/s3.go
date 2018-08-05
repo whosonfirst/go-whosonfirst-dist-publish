@@ -5,6 +5,7 @@ package s3
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -18,10 +19,11 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-mimetypes"
 	"io"
 	"io/ioutil"
-	_ "log"
+	"log"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -44,18 +46,37 @@ type S3Config struct {
 	Credentials string // see notes below
 }
 
+type S3ListOptions struct {
+	Strict  bool
+	Timings bool
+	MaxKeys int64
+	// Logger log.Logger
+}
+
 // this is a nearly straight clone of the core S3 object and
 // exists so that people don't have to (re) load all of the
 // aws-sdk-go code in their packages (20180801/thisisaaronland)
 
 type S3Object struct {
-	Key          string
+	KeyRaw       string // what aws-sdk-go returns
+	Key          string // KeyRaw but with S3Connection.prefix removed
 	Size         int64
 	LastModified time.Time
 	ETag         string
 }
 
 type S3ListCallback func(*S3Object) error
+
+func DefaultS3ListOptions() *S3ListOptions {
+
+	opts := S3ListOptions{
+		Strict:  false,
+		Timings: false,
+		MaxKeys: 500,
+	}
+
+	return &opts
+}
 
 func ValidS3Credentials() []string {
 
@@ -375,11 +396,73 @@ func (conn *S3Connection) Delete(key string) error {
 	return nil
 }
 
-func (conn *S3Connection) List(cb S3ListCallback) error {
+func (conn *S3Connection) SetACLForBucket(acl string, opts *S3ListOptions) error {
+
+	cb := func(obj *S3Object) error {
+
+		err := conn.SetACLForKey(obj.Key, acl)
+		return err
+	}
+
+	return conn.List(cb, opts)
+}
+
+func (conn *S3Connection) SetACLForKey(key string, acl string) error {
+
+	key = conn.prepareKey(key)
+
+	params := &s3.PutObjectAclInput{
+		ACL:    aws.String(acl),
+		Bucket: aws.String(conn.bucket),
+		Key:    aws.String(key),
+	}
+
+	_, err := conn.service.PutObjectAcl(params)
+	return err
+}
+
+func (conn *S3Connection) List(cb S3ListCallback, opts *S3ListOptions) error {
+
+	count_pages := int64(0)
+	count_items := int64(0)
+
+	if opts.Timings {
+
+		done_ch := make(chan bool)
+
+		defer func() {
+			done_ch <- true
+		}()
+
+		ticker := time.NewTicker(time.Second * 10)
+
+		go func() {
+
+			for range ticker.C {
+
+				select {
+				case <-done_ch:
+					break
+				default:
+					// pass
+				}
+
+				log.Printf("items %d pages %d\n", atomic.LoadInt64(&count_items), atomic.LoadInt64(&count_pages))
+			}
+
+		}()
+
+		t1 := time.Now()
+
+		defer func() {
+			log.Printf("time to list items %d %v\n", atomic.LoadInt64(&count_items), time.Since(t1))
+		}()
+	}
 
 	params := &s3.ListObjectsInput{
-		Bucket: aws.String(conn.bucket),
-		Prefix: aws.String(conn.prefix),
+		Bucket:  aws.String(conn.bucket),
+		Prefix:  aws.String(conn.prefix),
+		MaxKeys: aws.Int64(opts.MaxKeys),
 		// Delimiter: "baz",
 	}
 
@@ -388,23 +471,89 @@ func (conn *S3Connection) List(cb S3ListCallback) error {
 
 	aws_cb := func(rsp *s3.ListObjectsOutput, last_page bool) bool {
 
+		atomic.AddInt64(&count_pages, 1)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		done_ch := make(chan bool)
+		err_ch := make(chan error)
+
 		for _, aws_obj := range rsp.Contents {
 
-			obj := S3Object{
-				Key:          *aws_obj.Key,
+			atomic.AddInt64(&count_items, 1)
+
+			// because this:
+			// https://github.com/whosonfirst/go-whosonfirst-aws/issues/1
+
+			key_raw := *aws_obj.Key
+			key := key_raw
+
+			if conn.prefix != "" {
+
+				prefix := fmt.Sprintf("%s/", conn.prefix)
+
+				if strings.HasPrefix(key, prefix) {
+					key = strings.Replace(key, prefix, "", -1)
+				}
+			}
+
+			obj := &S3Object{
+				KeyRaw:       key_raw,
+				Key:          key,
 				Size:         *aws_obj.Size,
 				ETag:         *aws_obj.ETag,
 				LastModified: *aws_obj.LastModified,
 			}
 
-			err := cb(&obj)
+			go func(ctx context.Context, obj *S3Object, done_ch chan bool, err_ch chan error) {
 
-			if err != nil {
-				return false
+				defer func() {
+					done_ch <- true
+				}()
+
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					// pass
+				}
+
+				err := cb(obj)
+
+				if err != nil {
+					msg := fmt.Sprintf("failed to process %s because %s", obj.Key, err)
+					err_ch <- errors.New(msg)
+				}
+
+			}(ctx, obj, done_ch, err_ch)
+		}
+
+		remaining := len(rsp.Contents)
+		ok := true
+
+		for remaining > 0 {
+
+			select {
+
+			case <-done_ch:
+				remaining -= 1
+			case e := <-err_ch:
+				log.Println(e)
+
+				/*
+					if opts.Strict {
+						ok = false
+						break
+					}
+				*/
+
+			default:
+				// pass
 			}
 		}
 
-		return true
+		return ok
 	}
 
 	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/#example_S3_ListObjects_shared00

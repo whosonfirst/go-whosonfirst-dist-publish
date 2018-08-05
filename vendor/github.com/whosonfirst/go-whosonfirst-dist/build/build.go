@@ -12,7 +12,6 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -200,16 +199,26 @@ func BuildDistributions(ctx context.Context, opts *options.BuildOptions) ([]*dis
 	done_ch := make(chan bool)
 	err_ch := make(chan error)
 
-	count_cpu := runtime.NumCPU()
-	throttle_ch := make(chan bool, count_cpu)
+	// something something something size of the file/directory?
 
-	for i := 0; i < count_cpu; i++ {
+	count_throttle := opts.CompressMaxCPUs
+
+	throttle_ch := make(chan bool, count_throttle)
+
+	for i := 0; i < count_throttle; i++ {
 		throttle_ch <- true
 	}
 
 	for _, d := range distributions {
 
 		go func(ctx context.Context, d dist.Distribution, item_ch chan *dist.Item, throttle_ch chan bool, done_ch chan bool, err_ch chan error) {
+
+			defer func() {
+				opts.Logger.Status("All done compressing %s", d.Path())
+				done_ch <- true
+			}()
+
+			opts.Logger.Status("register function to compress %s", d.Path())
 
 			if opts.Timings {
 
@@ -220,11 +229,6 @@ func BuildDistributions(ctx context.Context, opts *options.BuildOptions) ([]*dis
 					opts.Logger.Status("time to compress %s %v", d.Path(), t2)
 				}()
 			}
-
-			defer func() {
-				throttle_ch <- true
-				done_ch <- true
-			}()
 
 			select {
 			case <-ctx.Done():
@@ -241,6 +245,11 @@ func BuildDistributions(ctx context.Context, opts *options.BuildOptions) ([]*dis
 				tb := time.Since(ta)
 				opts.Logger.Status("time to wait to start compressing %s %v", d.Path(), tb)
 			}
+
+			defer func() {
+				opts.Logger.Status("All done compressing %s (throttle)", d.Path())
+				throttle_ch <- true
+			}()
 
 			c, err := d.Compress()
 
@@ -493,9 +502,12 @@ func buildDistributionsForRepo(ctx context.Context, opts *options.BuildOptions) 
 
 		ta := time.Now()
 
+		// see notes in fs/bundles.go about meta/bundle filenames (20180731/thisisaaronland)
+
 		bundle_dist, err := fs.BuildBundle(ctx, opts, local_metafiles, local_sqlite)
 
 		tb := time.Since(ta)
+		opts.Logger.Status("time to build bundles (%s) %v", strings.Join(local_bundlefiles, ","), tb)
 
 		if err != nil {
 			return nil, err
@@ -509,8 +521,6 @@ func buildDistributionsForRepo(ctx context.Context, opts *options.BuildOptions) 
 			distributions = append(distributions, d)
 			local_bundlefiles = append(local_bundlefiles, d.Path())
 		}
-
-		opts.Logger.Status("time to build bundles (%s) %v", strings.Join(local_bundlefiles, ","), tb)
 	}
 
 	return distributions, nil
