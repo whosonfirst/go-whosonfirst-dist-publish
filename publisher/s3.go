@@ -142,20 +142,7 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 
 			defer wg.Done()
 
-			key := obj.Key
-
-			// See this? It sucks. It is also necessary until I decide and make
-			// the changes to the go-whosonfirst-aws/s3:List method to strip
-			// prefixes... (20180804/thisisaaronland)
-
-			if p.cfg.Prefix != "" {
-
-				prefix := fmt.Sprintf("%s/", p.cfg.Prefix)
-
-				if strings.HasPrefix(key, prefix) {
-					key = strings.Replace(key, prefix, "", -1)
-				}
-			}
+			key := obj.Key // remember this is *s3.S3Object Key and _not_ KeyRaw (because of p.conn.prefix)
 
 			err := p.conn.Delete(key)
 
