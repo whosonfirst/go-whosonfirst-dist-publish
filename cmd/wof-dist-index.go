@@ -4,7 +4,9 @@ import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
+	"github.com/whosonfirst/go-whosonfirst-repo"
 	"log"
+	"os"
 )
 
 func main() {
@@ -32,5 +34,11 @@ func main() {
 		log.Fatal("Invalid publisher")
 	}
 
-	log.Fatal("Please write me", p)
+	r, err := repo.NewDataRepoFromString("whosonfirst-data")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p.Index(r, os.Stdout)
 }

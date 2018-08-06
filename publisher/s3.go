@@ -208,8 +208,42 @@ func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
 
 		sort.Sort(sort.Reverse(sort.IntSlice(pubdates)))
 
-		// repo: latest, details[pubdates...]
-		log.Println(latest)
+		// here is the part where we need to start generating some data
+		// but the question is: how to share all this code between html
+		// representations and syndication feeds and and and - meanwhile
+		// as this is written we are not creating per-type indices (meta,
+		// sqlite, bundles...)
+
+		out := fmt.Sprintf("%s latest %v\n", repo_name, latest)
+		wr.Write([]byte(out))
+
+		for _, ts := range pubdates {
+
+			str_ts := strconv.Itoa(ts)
+
+			// put this block in a function or something so it can be
+			// invoked on latest (above)
+
+			for _, o := range details[str_ts] {
+
+				ext := filepath.Ext(o.Key)
+
+				if ext != ".json" {
+					continue
+				}
+
+				out := fmt.Sprintf("%s %s %v\n", repo_name, str_ts, o)
+				wr.Write([]byte(out))
+
+				r, err := p.conn.Get(o.Key)
+
+				if err != nil {
+					return err
+				}
+
+				io.Copy(wr, r)
+			}
+		}
 	}
 
 	return nil
