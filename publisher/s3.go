@@ -232,6 +232,8 @@ func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
 					continue
 				}
 
+				// filter by "type": "x-urn:whosonfirst:fs:{TYPE} here...
+
 				out := fmt.Sprintf("%s %s %v\n", repo_name, str_ts, o)
 				wr.Write([]byte(out))
 
@@ -242,6 +244,8 @@ func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
 				}
 
 				io.Copy(wr, r)
+
+				// make r in to a dist.Item here and append to... what?
 			}
 		}
 	}
