@@ -22,9 +22,9 @@ func init() {
 
 	// whosonfirst-data-venue-us-ca-1533149830.tar.bz2
 	// whosonfirst-data-venue-us-ny-latest.db.bz2
-	// see the we're excluding -latest ?
+	// re_distname_dated = regexp.MustCompile(`([a-z\-]+)\-(\d+)\..*$`)
 
-	re_distname = regexp.MustCompile(`([a-z\-]+)\-(\d+)\..*$`)
+	re_distname = regexp.MustCompile(`([a-z\-]+)\-(\d+|latest)\..*$`)
 }
 
 type S3Publisher struct {
@@ -97,6 +97,10 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 
 		for str_ts, _ := range details {
 
+			if str_ts == "latest" {
+				continue
+			}
+
 			ts, err := strconv.Atoi(str_ts)
 
 			if err != nil {
@@ -158,8 +162,63 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 	return nil
 }
 
+func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
+
+	grouped, err := p.group(r)
+
+	if err != nil {
+		return err
+	}
+
+	repos := make([]string, 0)
+
+	for repo_name, _ := range grouped {
+		repos = append(repos, repo_name)
+	}
+
+	sort.Strings(repos)
+
+	for _, repo_name := range repos {
+
+		details, ok := grouped[repo_name]
+
+		if !ok {
+			continue // how would this even be possible... ?
+		}
+
+		var latest []*s3.S3Object
+
+		pubdates := make([]int, 0)
+
+		for str_ts, _ := range details {
+
+			if str_ts == "latest" {
+				latest = details[str_ts]
+				continue
+			}
+
+			ts, err := strconv.Atoi(str_ts)
+
+			if err != nil {
+				return err
+			}
+
+			pubdates = append(pubdates, ts)
+		}
+
+		sort.Sort(sort.Reverse(sort.IntSlice(pubdates)))
+
+		// repo: latest, details[pubdates...]
+		log.Println(latest)
+	}
+
+	return nil
+}
+
 // this is its own method because we'll probably need and want it for generating
 // index pages
+
+// mmmmmaybe? pre-sort everything before we return things?
 
 func (p *S3Publisher) group(r repo.Repo) (map[string]map[string][]*s3.S3Object, error) {
 
