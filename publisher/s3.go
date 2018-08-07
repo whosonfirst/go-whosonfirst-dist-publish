@@ -179,6 +179,12 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 	return nil
 }
 
+// see the way all of this code could be made publisher-agnostic if p.buildIndex
+// were made a required part of the Publisher interface? yeah, that or maybe the
+// 'Index' interface is just changed to return  (map[string][]*dist.Item, error)
+// and this method is put in a helper package or cmd/wof-dist-index.go itself...
+// (20180708/thisisaaronland)
+
 func (p *S3Publisher) Index(r repo.Repo) error {
 
 	items, err := p.buildIndex(r)
