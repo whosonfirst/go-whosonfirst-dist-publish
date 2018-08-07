@@ -14,7 +14,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	_ "os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -25,14 +24,18 @@ import (
 )
 
 var re_distname *regexp.Regexp
+var re_disttype *regexp.Regexp
 
 func init() {
 
 	// whosonfirst-data-venue-us-ca-1533149830.tar.bz2
 	// whosonfirst-data-venue-us-ny-latest.db.bz2
-	// re_distname_dated = regexp.MustCompile(`([a-z\-]+)\-(\d+)\..*$`)
 
 	re_distname = regexp.MustCompile(`([a-z\-]+)\-(\d+|latest)\..*$`)
+
+	// this needs to be moved in to go-whosonfirst-dist
+
+	re_disttype = regexp.MustCompile(`x\-urn\:([^\:]+)\:([^\:]+)\:([^\#]+)(?:\#(.*))?`)
 }
 
 type HTMLVars struct {
@@ -226,15 +229,20 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 		r := bytes.NewReader(b.Bytes())
 		fh := ioutil.NopCloser(r)
 
-		key := fmt.Sprintf("%s/index.html", t) // PLEASE FIX t
+		if t == "bundle" {
+			t = "bundles" // ARGGHHHHGGGHNNGNGNNNFFFPPPHPPHPTTTT
+		}
 
-		log.Println("KEY", key)
+		key := fmt.Sprintf("%s/index.html", t)
+		// log.Println("KEY", key)
 
 		err = p.Publish(fh, key)
 
 		if err != nil {
 			return err
 		}
+
+		// TO DO: BUILD AND PUBLISH %s/inventory.json HERE
 	}
 
 	return nil
@@ -310,8 +318,21 @@ func (p *S3Publisher) buildIndex(r repo.Repo) (map[string][]*dist.Item, error) {
 
 			for _, i := range o_items {
 
-				// filter by "type": "x-urn:whosonfirst:fs:{TYPE} here...
-				t := "debug"
+				// again, this is all code that should be in go-whosonfirst-dist proper...
+
+				m := re_disttype.FindAllStringSubmatch(i.Type, -1)
+
+				if len(m) == 0 {
+					log.Println("Unable to parse distribution type", i.Type)
+					continue
+				}
+
+				// [[x-urn:whosonfirst:database:sqlite#common whosonfirst database sqlite common]]
+
+				// major := m[0][2]
+				minor := m[0][3]
+
+				t := minor // should this be major/minor leaving the details to some other method?
 
 				t_items, ok := items[t]
 
