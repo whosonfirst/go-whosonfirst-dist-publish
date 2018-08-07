@@ -40,5 +40,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	p.Index(r, os.Stdout)
+	err = p.Index(r, os.Stdout)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }

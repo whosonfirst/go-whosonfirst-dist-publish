@@ -8,6 +8,7 @@ self:   prep rmdeps
 	if test -d src; then rm -rf src; fi
 	mkdir -p src/github.com/whosonfirst/go-whosonfirst-dist-publish
 	cp *.go src/github.com/whosonfirst/go-whosonfirst-dist-publish/
+	cp -r assets src/github.com/whosonfirst/go-whosonfirst-dist-publish/
 	cp -r publisher src/github.com/whosonfirst/go-whosonfirst-dist-publish/
 	cp -r vendor/* src/
 
@@ -20,6 +21,8 @@ deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-dist"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-repo"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-aws/..."
+	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-bindata"
+	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-bindata-html-template"
 	mv src/github.com/whosonfirst/go-whosonfirst-dist/vendor/github.com/tidwall src/github.com/
 
 vendor-deps: rmdeps deps
@@ -32,6 +35,13 @@ fmt:
 	go fmt *.go
 	go fmt cmd/*.go
 	go fmt publisher/*.go
+
+assets: self
+	@GOPATH=$(GOPATH) go build -o bin/go-bindata ./vendor/github.com/whosonfirst/go-bindata/go-bindata/
+	rm -rf templates/*/*~
+	rm -rf assets
+	mkdir -p assets/html
+	@GOPATH=$(GOPATH) bin/go-bindata -pkg html -o assets/html/html.go templates/html
 
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-publish cmd/wof-dist-publish.go

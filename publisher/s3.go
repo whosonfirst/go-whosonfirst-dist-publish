@@ -1,11 +1,16 @@
 package publisher
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/whosonfirst/go-bindata-html-template"
 	"github.com/whosonfirst/go-whosonfirst-aws/s3"
+	"github.com/whosonfirst/go-whosonfirst-dist"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish"
+	"github.com/whosonfirst/go-whosonfirst-dist-publish/assets/html"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"io"
+	"io/ioutil"
 	"log"
 	"path/filepath"
 	"regexp"
@@ -25,6 +30,11 @@ func init() {
 	// re_distname_dated = regexp.MustCompile(`([a-z\-]+)\-(\d+)\..*$`)
 
 	re_distname = regexp.MustCompile(`([a-z\-]+)\-(\d+|latest)\..*$`)
+}
+
+type HTMLVars struct {
+	Date  string
+	Items []*dist.Item
 }
 
 type S3Publisher struct {
@@ -162,7 +172,12 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 	return nil
 }
 
+// this interface will likely change to be ([]*dist.Item, error)
+// but not today... (20180807/thisisaaronland)
+
 func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
+
+	items := make([]*dist.Item, 0)
 
 	grouped, err := p.group(r)
 
@@ -214,43 +229,115 @@ func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
 		// as this is written we are not creating per-type indices (meta,
 		// sqlite, bundles...)
 
-		out := fmt.Sprintf("%s latest %v\n", repo_name, latest)
-		wr.Write([]byte(out))
+		// out := fmt.Sprintf("%s latest %v\n", repo_name, latest)
+		// wr.Write([]byte(out))
+
+		objects := make([][]*s3.S3Object, 0)
+
+		objects = append(objects, latest)
 
 		for _, ts := range pubdates {
 
 			str_ts := strconv.Itoa(ts)
+			objects = append(objects, details[str_ts])
+		}
 
-			// put this block in a function or something so it can be
-			// invoked on latest (above)
+		for _, o := range objects {
 
-			for _, o := range details[str_ts] {
+			ts_items, err := p.appendObjectsToItems(o)
 
-				ext := filepath.Ext(o.Key)
+			if err != nil {
+				return err
+			}
 
-				if ext != ".json" {
-					continue
-				}
-
-				// filter by "type": "x-urn:whosonfirst:fs:{TYPE} here...
-
-				out := fmt.Sprintf("%s %s %v\n", repo_name, str_ts, o)
-				wr.Write([]byte(out))
-
-				r, err := p.conn.Get(o.Key)
-
-				if err != nil {
-					return err
-				}
-
-				io.Copy(wr, r)
-
-				// make r in to a dist.Item here and append to... what?
+			for _, i := range ts_items {
+				items = append(items, i)
 			}
 		}
 	}
 
+	log.Println("ITEMS", len(items))
+
+	// It seems likely that all of this template code will get
+	// moved in to some more generic package since there's nothing
+	// S3 specific about it and could be shared across "publishers"
+	// ... but not today (20180807/thisisaaronland)
+
+	// although it is true that all this template stuff could
+	// be method-chained I find that it doesn't take long for
+	// method-chaining to become inpenetrable gibberish so why
+	// start now (20180807/thisisaaronland)
+
+	t := template.New("inventory", html.Asset)
+
+	funcs := template.FuncMap{}
+	t = t.Funcs(funcs)
+
+	t, err = t.ParseFiles("html/inventory.html")
+
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+
+	vars := HTMLVars{
+		Date:  now.Format(time.RFC3339),
+		Items: items,
+	}
+
+	log.Println("GO", now)
+
+	err = t.Execute(wr, vars)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (p *S3Publisher) appendObjectsToItems(objects []*s3.S3Object) ([]*dist.Item, error) {
+
+	items := make([]*dist.Item, 0)
+
+	for _, o := range objects {
+
+		ext := filepath.Ext(o.Key)
+
+		if ext != ".json" {
+			continue
+		}
+
+		// filter by "type": "x-urn:whosonfirst:fs:{TYPE} here...
+
+		// out := fmt.Sprintf("%s %s %v\n", repo_name, str_ts, o)
+		// wr.Write([]byte(out))
+
+		r, err := p.conn.Get(o.Key)
+
+		if err != nil {
+			return nil, err
+		}
+
+		body, err := ioutil.ReadAll(r)
+
+		if err != nil {
+			return nil, err
+		}
+
+		var item dist.Item
+
+		err = json.Unmarshal(body, &item)
+
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, &item)
+	}
+
+	return items, nil
 }
 
 // this is its own method because we'll probably need and want it for generating
