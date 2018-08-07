@@ -1,6 +1,8 @@
 package publisher
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/whosonfirst/go-bindata-html-template"
@@ -12,6 +14,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	_ "os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -34,6 +37,7 @@ func init() {
 
 type HTMLVars struct {
 	Date  string
+	Type  string
 	Items []*dist.Item
 }
 
@@ -172,17 +176,80 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 	return nil
 }
 
-// this interface will likely change to be ([]*dist.Item, error)
-// but not today... (20180807/thisisaaronland)
+func (p *S3Publisher) Index(r repo.Repo) error {
 
-func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
+	items, err := p.buildIndex(r)
 
-	items := make([]*dist.Item, 0)
+	if err != nil {
+		return err
+	}
+
+	// although it is true that all this template stuff could
+	// be method-chained I find that it doesn't take long for
+	// method-chaining to become inpenetrable gibberish so why
+	// start now (20180807/thisisaaronland)
+
+	// remember this is a github.com/whosonfirst/go-bindata-html-template
+	// and not a plain vanilla html/template
+
+	tpl := template.New("inventory", html.Asset)
+
+	// leaving this here because I never remember how to do it
+	// funcs := template.FuncMap{}
+	// tpl = tpl.Funcs(funcs)
+
+	tpl, err = tpl.ParseFiles("templates/html/inventory.html")
+
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+
+	for t, t_items := range items {
+
+		vars := HTMLVars{
+			Date:  now.Format(time.RFC3339),
+			Type:  t,
+			Items: t_items,
+		}
+
+		var b bytes.Buffer
+		wr := bufio.NewWriter(&b)
+
+		err = tpl.Execute(wr, vars)
+
+		if err != nil {
+			return err
+		}
+
+		r := bytes.NewReader(b.Bytes())
+		fh := ioutil.NopCloser(r)
+
+		key := fmt.Sprintf("%s/index.html", t) // PLEASE FIX t
+
+		log.Println("KEY", key)
+
+		err = p.Publish(fh, key)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// maybe make this part of the required interface and public ?
+
+func (p *S3Publisher) buildIndex(r repo.Repo) (map[string][]*dist.Item, error) {
+
+	items := make(map[string][]*dist.Item)
 
 	grouped, err := p.group(r)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	repos := make([]string, 0)
@@ -215,22 +282,13 @@ func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
 			ts, err := strconv.Atoi(str_ts)
 
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			pubdates = append(pubdates, ts)
 		}
 
 		sort.Sort(sort.Reverse(sort.IntSlice(pubdates)))
-
-		// here is the part where we need to start generating some data
-		// but the question is: how to share all this code between html
-		// representations and syndication feeds and and and - meanwhile
-		// as this is written we are not creating per-type indices (meta,
-		// sqlite, bundles...)
-
-		// out := fmt.Sprintf("%s latest %v\n", repo_name, latest)
-		// wr.Write([]byte(out))
 
 		objects := make([][]*s3.S3Object, 0)
 
@@ -244,57 +302,30 @@ func (p *S3Publisher) Index(r repo.Repo, wr io.Writer) error {
 
 		for _, o := range objects {
 
-			ts_items, err := p.appendObjectsToItems(o)
+			o_items, err := p.appendObjectsToItems(o)
 
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			for _, i := range ts_items {
-				items = append(items, i)
+			for _, i := range o_items {
+
+				// filter by "type": "x-urn:whosonfirst:fs:{TYPE} here...
+				t := "debug"
+
+				t_items, ok := items[t]
+
+				if !ok {
+					t_items = make([]*dist.Item, 0)
+				}
+
+				t_items = append(t_items, i)
+				items[t] = t_items
 			}
 		}
 	}
 
-	log.Println("ITEMS", len(items))
-
-	// It seems likely that all of this template code will get
-	// moved in to some more generic package since there's nothing
-	// S3 specific about it and could be shared across "publishers"
-	// ... but not today (20180807/thisisaaronland)
-
-	// although it is true that all this template stuff could
-	// be method-chained I find that it doesn't take long for
-	// method-chaining to become inpenetrable gibberish so why
-	// start now (20180807/thisisaaronland)
-
-	t := template.New("inventory", html.Asset)
-
-	funcs := template.FuncMap{}
-	t = t.Funcs(funcs)
-
-	t, err = t.ParseFiles("html/inventory.html")
-
-	if err != nil {
-		return err
-	}
-
-	now := time.Now()
-
-	vars := HTMLVars{
-		Date:  now.Format(time.RFC3339),
-		Items: items,
-	}
-
-	log.Println("GO", now)
-
-	err = t.Execute(wr, vars)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return items, nil
 }
 
 func (p *S3Publisher) appendObjectsToItems(objects []*s3.S3Object) ([]*dist.Item, error) {
@@ -308,11 +339,6 @@ func (p *S3Publisher) appendObjectsToItems(objects []*s3.S3Object) ([]*dist.Item
 		if ext != ".json" {
 			continue
 		}
-
-		// filter by "type": "x-urn:whosonfirst:fs:{TYPE} here...
-
-		// out := fmt.Sprintf("%s %s %v\n", repo_name, str_ts, o)
-		// wr.Write([]byte(out))
 
 		r, err := p.conn.Get(o.Key)
 

@@ -6,7 +6,6 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"log"
-	"os"
 )
 
 func main() {
@@ -40,7 +39,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = p.Index(r, os.Stdout)
+	err = p.Index(r)
 
 	if err != nil {
 		log.Fatal(err)
