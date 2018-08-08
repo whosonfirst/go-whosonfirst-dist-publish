@@ -1,15 +1,15 @@
 {{ define "feed_rss_20" }}<?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:h="http://www.w3.org/1999/xhtml" version="2.0">
   <channel>
-    <title>Who's On First Distributions</title>
-    <link>https://dist.whosonfirst.org/</link>
+    <title>Who's On First {{ .Type }} distributions</title>
+    <link>https://dist.whosonfirst.org/{{ .Type }}/</link>
     <lastBuildDate>{{ .BuildDate.Format "Mon, 02 Jan 2006 15:04:05 MST" }}</lastBuildDate>
     <description>Who's On First is a gazetteer of all the places.</description>
-    {{ range $fm := .Posts }}
+      {{ range $i, $it := .Items }}    
     <item>
-      <link>https://whosonfirst.org{{ $fm.Permalink }}</link>
-      <title>{{ $fm.Title }}</title>
-      <description>{{ $fm.Excerpt }}</description>
+      <link>https://dist.whosonfirst.org/{{ .Type }}#{{ $it.Name }}</link>
+      <title>{{ $it.Name }}</title>
+      <description>This distribution contains {{ $it.Count | humanize_comma }} Who's On First records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</description>
     </item>
     {{ end }}
   </channel>

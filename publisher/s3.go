@@ -211,7 +211,15 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 
 	tpl = tpl.Funcs(funcs)
 
-	tpl, err = tpl.ParseFiles("templates/html/inventory.html")
+	html_tpl, err := tpl.ParseFiles("templates/html/inventory.html")
+
+	if err != nil {
+		return err
+	}
+
+	// FIX ME - this produces HTML not RSS...
+
+	rss_tpl, err := tpl.ParseFiles("templates/feed/rss_2.0.xml")
 
 	if err != nil {
 		return err
@@ -221,11 +229,17 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 
 	for t, t_items := range items {
 
+		if t == "bundle" {
+			t = "bundles" // ARGGHHHHGGGHNNGNGNNNFFFPPPHPPHPTTTT
+		}
+
 		html_key := fmt.Sprintf("%s/index.html", t)
 		json_key := fmt.Sprintf("%s/inventory.json", t)
 
+		rss_key := fmt.Sprintf("%s/rss.xml", t)
 		// atom_key := fmt.Sprintf("%s/atom.xml", t)
-		// rss_key := fmt.Sprintf("%s/rss.xml", t)
+
+		// please rename to something more generic than HTMLVars
 
 		vars := HTMLVars{
 			Date:  now.Format(time.RFC3339),
@@ -233,10 +247,12 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 			Items: t_items,
 		}
 
+		// index.html
+
 		var html_b bytes.Buffer
 		html_wr := bufio.NewWriter(&html_b)
 
-		err = tpl.Execute(html_wr, vars)
+		err = html_tpl.Execute(html_wr, vars)
 
 		if err != nil {
 			return err
@@ -245,15 +261,13 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 		html_r := bytes.NewReader(html_b.Bytes())
 		html_fh := ioutil.NopCloser(html_r)
 
-		if t == "bundle" {
-			t = "bundles" // ARGGHHHHGGGHNNGNGNNNFFFPPPHPPHPTTTT
-		}
-
 		err = p.Publish(html_fh, html_key)
 
 		if err != nil {
 			return err
 		}
+
+		// inventory.json
 
 		json_b, err := json.Marshal(t_items)
 
@@ -265,6 +279,32 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 		json_fh := ioutil.NopCloser(json_r)
 
 		err = p.Publish(json_fh, json_key)
+
+		if err != nil {
+			return err
+		}
+
+		if len(t_items) > 10 {
+			t_items = t_items[0:10]
+		}
+
+		vars.Items = t_items
+
+		// rss.xml
+
+		var rss_b bytes.Buffer
+		rss_wr := bufio.NewWriter(&rss_b)
+
+		err = rss_tpl.Execute(rss_wr, vars)
+
+		if err != nil {
+			return err
+		}
+
+		rss_r := bytes.NewReader(rss_b.Bytes())
+		rss_fh := ioutil.NopCloser(rss_r)
+
+		err = p.Publish(rss_fh, rss_key)
 
 		if err != nil {
 			return err
