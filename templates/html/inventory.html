@@ -47,7 +47,7 @@
 	      <li id="{{ $it.Name }}">
 		<strong><a href="{{ $it.NameCompressed }}">{{ $it.NameCompressed }}</a></strong> <small class="sha256">{{ $it.Sha256Compressed }}</small><br />
 		<div class="details">
-		  This distribution contains <code class="count">{{ $it.Count }}</code> Who's On First records and is <code class="size">{{ $it.SizeCompressed }}</code> compressed and <code class="size">{{ $it.Size }}</code> uncompressed.<br />
+		  This distribution contains <code class="count">{{ $it.Count | humanize_comma }}</code> Who's On First records and is <code class="size">{{ $it.SizeCompressed | humanize_bytes }}</code> compressed and <code class="size">{{ $it.Size | humanize_bytes}}</code> uncompressed.<br />
 		  It was created <code class="date">{{ $it.LastModified }}</code> and (the data itself) was last updated on <code class="date">{{ $it.LastUpdate }}</code>.
 		</div>
   	      </li>

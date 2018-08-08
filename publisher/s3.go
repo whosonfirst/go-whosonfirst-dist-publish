@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/dustin/go-humanize"		
 	"github.com/whosonfirst/go-bindata-html-template"
 	"github.com/whosonfirst/go-whosonfirst-aws/s3"
 	"github.com/whosonfirst/go-whosonfirst-dist"
@@ -203,9 +204,12 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 
 	tpl := template.New("inventory", html.Asset)
 
-	// leaving this here because I never remember how to do it
-	// funcs := template.FuncMap{}
-	// tpl = tpl.Funcs(funcs)
+	funcs := template.FuncMap{
+	      "humanize_bytes": func(i int64) string { return humanize.Bytes(uint64(i)) },	// u so great Go until u r annoying this way...
+	      "humanize_comma": humanize.Comma,
+	}
+	
+	tpl = tpl.Funcs(funcs)
 
 	tpl, err = tpl.ParseFiles("templates/html/inventory.html")
 

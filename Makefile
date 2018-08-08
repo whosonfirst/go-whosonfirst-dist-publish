@@ -23,6 +23,7 @@ deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-aws/..."
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-bindata"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-bindata-html-template"
+	@GOPATH=$(GOPATH) go get -u "github.com/dustin/go-humanize"
 	mv src/github.com/whosonfirst/go-whosonfirst-dist/vendor/github.com/tidwall src/github.com/
 
 vendor-deps: rmdeps deps
