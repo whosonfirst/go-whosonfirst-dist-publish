@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/dustin/go-humanize"		
+	"github.com/dustin/go-humanize"
 	"github.com/whosonfirst/go-bindata-html-template"
 	"github.com/whosonfirst/go-whosonfirst-aws/s3"
 	"github.com/whosonfirst/go-whosonfirst-dist"
@@ -205,10 +205,10 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 	tpl := template.New("inventory", html.Asset)
 
 	funcs := template.FuncMap{
-	      "humanize_bytes": func(i int64) string { return humanize.Bytes(uint64(i)) },	// u so great Go until u r annoying this way...
-	      "humanize_comma": humanize.Comma,
+		"humanize_bytes": func(i int64) string { return humanize.Bytes(uint64(i)) }, // u so great Go until u r annoying this way...
+		"humanize_comma": humanize.Comma,
 	}
-	
+
 	tpl = tpl.Funcs(funcs)
 
 	tpl, err = tpl.ParseFiles("templates/html/inventory.html")
@@ -221,38 +221,55 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 
 	for t, t_items := range items {
 
+		html_key := fmt.Sprintf("%s/index.html", t)
+		json_key := fmt.Sprintf("%s/inventory.json", t)
+
+		// atom_key := fmt.Sprintf("%s/atom.xml", t)
+		// rss_key := fmt.Sprintf("%s/rss.xml", t)
+
 		vars := HTMLVars{
 			Date:  now.Format(time.RFC3339),
 			Type:  t,
 			Items: t_items,
 		}
 
-		var b bytes.Buffer
-		wr := bufio.NewWriter(&b)
+		var html_b bytes.Buffer
+		html_wr := bufio.NewWriter(&html_b)
 
-		err = tpl.Execute(wr, vars)
+		err = tpl.Execute(html_wr, vars)
 
 		if err != nil {
 			return err
 		}
 
-		r := bytes.NewReader(b.Bytes())
-		fh := ioutil.NopCloser(r)
+		html_r := bytes.NewReader(html_b.Bytes())
+		html_fh := ioutil.NopCloser(html_r)
 
 		if t == "bundle" {
 			t = "bundles" // ARGGHHHHGGGHNNGNGNNNFFFPPPHPPHPTTTT
 		}
 
-		key := fmt.Sprintf("%s/index.html", t)
-		// log.Println("KEY", key)
-
-		err = p.Publish(fh, key)
+		err = p.Publish(html_fh, html_key)
 
 		if err != nil {
 			return err
 		}
 
-		// TO DO: BUILD AND PUBLISH %s/inventory.json HERE
+		json_b, err := json.Marshal(t_items)
+
+		if err != nil {
+			return err
+		}
+
+		json_r := bytes.NewReader(json_b)
+		json_fh := ioutil.NopCloser(json_r)
+
+		err = p.Publish(json_fh, json_key)
+
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
