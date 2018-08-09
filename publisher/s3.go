@@ -217,10 +217,6 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 		return err
 	}
 
-	// FIX ME - this produces HTML not RSS...
-
-	rss_tpl, err := tpl.ParseFiles("templates/feed/rss_2.0.xml")
-
 	if err != nil {
 		return err
 	}
@@ -236,11 +232,10 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 		html_key := fmt.Sprintf("%s/index.html", t)
 		json_key := fmt.Sprintf("%s/inventory.json", t)
 
-		rss_key := fmt.Sprintf("%s/rss.xml", t)
-		// atom_key := fmt.Sprintf("%s/atom.xml", t)
-
 		// please rename to something more generic than HTMLVars
-
+		// because we're also going to (eventually) pass it to the 
+		// feed templates
+		
 		vars := HTMLVars{
 			Date:  now.Format(time.RFC3339),
 			Type:  t,
@@ -284,32 +279,19 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 			return err
 		}
 
-		if len(t_items) > 10 {
-			t_items = t_items[0:10]
-		}
+		// rss.xml - please make this work
+		// atom.xml - please make this work
 
-		vars.Items = t_items
+		/*
 
-		// rss.xml
+			rss_key := fmt.Sprintf("%s/rss.xml", t)
+			atom_key := fmt.Sprintf("%s/atom.xml", t)
 
-		var rss_b bytes.Buffer
-		rss_wr := bufio.NewWriter(&rss_b)
+			if len(t_items) > 10 {
+				t_items = t_items[0:10]
+			}
 
-		err = rss_tpl.Execute(rss_wr, vars)
-
-		if err != nil {
-			return err
-		}
-
-		rss_r := bytes.NewReader(rss_b.Bytes())
-		rss_fh := ioutil.NopCloser(rss_r)
-
-		err = p.Publish(rss_fh, rss_key)
-
-		if err != nil {
-			return err
-		}
-
+		*/
 	}
 
 	return nil

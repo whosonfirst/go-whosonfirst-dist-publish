@@ -42,7 +42,9 @@ assets: self
 	rm -rf templates/*/*~
 	rm -rf assets
 	mkdir -p assets/html
-	@GOPATH=$(GOPATH) bin/go-bindata -pkg html -o assets/html/html.go templates/html templates/feed
+	mkdir -p assets/feed
+	@GOPATH=$(GOPATH) bin/go-bindata -pkg html -o assets/html/html.go templates/html
+	@GOPATH=$(GOPATH) bin/go-bindata -pkg feed -o assets/feed/feed.go templates/feed
 
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-publish cmd/wof-dist-publish.go
