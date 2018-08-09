@@ -51,8 +51,7 @@ fi
 rm -rf ${WORKDIR}/*
 echo `date` > ${LOCKFILE}
    
-# for REPO in whosonfirst-data-constituency-ca
-# TO DO: check length of $@ (... is it $@) and if empty then invoke this:
+# TO DO: check length of $@ (... is it $@ ??) and if empty then invoke this:
 
 for REPO in `${LIST_REPOS} -not-forked -updated-since P1D`
 do
