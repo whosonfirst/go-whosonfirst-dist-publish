@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	// "context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -30,6 +29,8 @@ import (
 
 var re_distname *regexp.Regexp
 var re_disttype *regexp.Regexp
+
+// PLEASE RECONCILE ME WITH THE CODE IN publisher/s3.go
 
 func init() {
 
@@ -66,71 +67,10 @@ func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
 
 			defer wg.Done()
 
-			publish := true
+			err := PublishItem(item, opts)
 
-			// if item latest: copy in to tmp var
-			// else: create tmp var and replace "-{TIMESTAMP}" with "-latest"
-			// then
-			// fetch tmp-latest
-			// compare fetch-latest sha256_commpressed with item sha256_compressed
-			// if same: skip
-
-			m_name := re_distname.FindAllStringSubmatch(item.NameCompressed, -1)
-			m_type := re_disttype.FindAllStringSubmatch(item.Type, -1)
-
-			if len(m_name) > 0 && len(m_type) > 0 {
-
-				// PLEASE RECONCILE THIS WILL THE CODE TO GENERATE PUBLISH KEYS
-				// BELOW... (20180809/thisisaaronland)
-
-				tmp_name := fmt.Sprintf("%s-latest.%s.json", m_name[0][1], m_name[0][3])
-				tmp_minor := m_type[0][3]
-
-				if tmp_minor == "bundle" {
-					tmp_minor = "bundles" // ARGHHHHHHHHHHPPPPTPPFFFFFFHHHHTTTT
-				}
-
-				tmp_key := fmt.Sprintf("%s/%s", tmp_minor, tmp_name)
-
-				tmp_fh, err := opts.Publisher.Fetch(tmp_key)
-
-				var tmp_item *dist.Item
-
-				ok := true
-
-				if err != nil {
-					ok = false
-				}
-
-				if ok {
-
-					tmp_body, err := ioutil.ReadAll(tmp_fh)
-
-					if err == nil {
-
-						err = json.Unmarshal(tmp_body, &tmp_item)
-
-						if err != nil {
-							ok = false
-						}
-					}
-				}
-
-				if ok {
-
-					if item.Sha256Compressed == tmp_item.Sha256Compressed {
-						publish = false
-					}
-				}
-			}
-
-			if publish {
-
-				err := PublishItem(item, opts)
-
-				if err != nil {
-					log.Printf("Failed to publish %s %s\n", item.Name, err)
-				}
+			if err != nil {
+				log.Printf("Failed to publish %s %s\n", item.Name, err)
 			}
 
 		}(item)
@@ -143,6 +83,10 @@ func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
 
 func PublishItem(item *dist.Item, opts *PublishOptions) error {
 
+	if !shouldPublish(item, opts) {
+		return nil
+	}
+
 	nc := item.NameCompressed
 
 	lu, err := time.Parse(time.RFC3339, item.LastUpdate)
@@ -150,6 +94,9 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 	if err != nil {
 		return err
 	}
+
+	// PLEASE RECONCILE ALL THIS STUFF WITH THE NAME/TYPE PARSING IN shouldPublish
+	// (20180809/thisisaaronland)
 
 	suffix := fmt.Sprintf("-%d.", lu.Unix())
 
@@ -233,6 +180,86 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 	}
 
 	return nil
+}
+
+// PLEASE RENAME ME...
+
+func shouldPublish(item *dist.Item, opts *PublishOptions) bool {
+
+	publish := true
+
+	/*
+		if item latest: copy in to tmp var
+		else: create tmp var and replace "-{TIMESTAMP}" with "-latest" <-- this should never happen since the "-{TIMESTAMP}" version is
+		      	     	     	 	 		     	       	   cloned below in PublishItem but you get the idea...
+		then:
+		fetch tmp-latest
+		compare fetch-latest sha256_commpressed with item sha256_compressed
+		if same: skip
+	*/
+
+	// PLEASE RECONCILE THIS WILL THE CODE TO GENERATE PUBLISH KEYS
+	// BELOW... (20180809/thisisaaronland)
+
+	m_name := re_distname.FindAllStringSubmatch(item.NameCompressed, -1)
+	m_type := re_disttype.FindAllStringSubmatch(item.Type, -1)
+
+	if len(m_name) == 0 || len(m_type) == 0 {
+
+		log.Printf("Failed to parse %s (%d) or %s (%d) which is weird...\n", item.NameCompressed, len(m_name), item.Type, len(m_type))
+
+	} else {
+
+		tmp_name := fmt.Sprintf("%s-latest.%s.json", m_name[0][1], m_name[0][3])
+		tmp_minor := m_type[0][3]
+
+		if tmp_minor == "bundle" {
+			tmp_minor = "bundles" // ARGHHHHHHHHHHPPPPTPPFFFFFFHHHHTTTT
+		}
+
+		tmp_key := fmt.Sprintf("%s/%s", tmp_minor, tmp_name)
+
+		var tmp_item *dist.Item
+
+		tmp_fh, err := opts.Publisher.Fetch(tmp_key)
+
+		ok := true
+
+		if err != nil {
+			log.Printf("failed to fetch %s for comparing with %s: %s\n", tmp_key, item.NameCompressed, err)
+			ok = false
+		}
+
+		if ok {
+
+			tmp_body, err := ioutil.ReadAll(tmp_fh)
+
+			if err != nil {
+				log.Printf("failed to read %s for comparing with %s: %s\n", tmp_key, item.NameCompressed, err)
+			} else {
+
+				err = json.Unmarshal(tmp_body, &tmp_item)
+
+				if err != nil {
+					log.Printf("failed to parse %s for comparing with %s: %s\n", tmp_key, item.NameCompressed, err)
+					ok = false
+				}
+			}
+		}
+
+		if ok {
+
+			if item.Sha256Compressed == tmp_item.Sha256Compressed {
+				publish = false
+			}
+
+			if !publish {
+				log.Printf("sha256 hashes for remote#%s and local#%s match: do not republish\n", tmp_key, item.NameCompressed)
+			}
+		}
+	}
+
+	return publish
 }
 
 func publishFile(source string, dest string, opts *PublishOptions) error {
