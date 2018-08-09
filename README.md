@@ -76,4 +76,5 @@ rm -f ${LOCKFILE}
 
 ## See also:
 
+* https://github.com/whosonfirst/go-whosonfirst-github
 * https://github.com/whosonfirst/go-whosonfirst-dist
