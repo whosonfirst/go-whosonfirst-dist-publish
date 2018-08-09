@@ -19,10 +19,29 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
+
+// PLEASE RECONCILE ME WITH publishers/s3.go NOT TO MENTION
+// go-whosonfirst-repo AND go-whosonfirst-dist
+
+var re_distname *regexp.Regexp
+var re_disttype *regexp.Regexp
+
+func init() {
+
+	// whosonfirst-data-venue-us-ca-1533149830.tar.bz2
+	// whosonfirst-data-venue-us-ny-latest.db.bz2
+
+	re_distname = regexp.MustCompile(`([a-z\-]+)\-(\d+|latest)\.(.*)$`)
+
+	// this needs to be moved in to go-whosonfirst-dist
+
+	re_disttype = regexp.MustCompile(`x\-urn\:([^\:]+)\:([^\:]+)\:([^\#]+)(?:\#(.*))?`)
+}
 
 type PublishOptions struct {
 	Workdir   string
@@ -46,10 +65,72 @@ func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
 		go func(item *dist.Item) {
 
 			defer wg.Done()
-			err := PublishItem(item, opts)
 
-			if err != nil {
-				log.Printf("Failed to publish %s %s\n", item.Name, err)
+			publish := true
+
+			// if item latest: copy in to tmp var
+			// else: create tmp var and replace "-{TIMESTAMP}" with "-latest"
+			// then
+			// fetch tmp-latest
+			// compare fetch-latest sha256_commpressed with item sha256_compressed
+			// if same: skip
+
+			m_name := re_distname.FindAllStringSubmatch(item.NameCompressed, -1)
+			m_type := re_disttype.FindAllStringSubmatch(item.Type, -1)
+
+			if len(m_name) > 0 && len(m_type) > 0 {
+
+				// PLEASE RECONCILE THIS WILL THE CODE TO GENERATE PUBLISH KEYS
+				// BELOW... (20180809/thisisaaronland)
+
+				tmp_name := fmt.Sprintf("%s-latest.%s.json", m_name[0][1], m_name[0][3])
+				tmp_minor := m_type[0][3]
+
+				if tmp_minor == "bundle" {
+					tmp_minor = "bundles" // ARGHHHHHHHHHHPPPPTPPFFFFFFHHHHTTTT
+				}
+
+				tmp_key := fmt.Sprintf("%s/%s", tmp_minor, tmp_name)
+
+				tmp_fh, err := opts.Publisher.Fetch(tmp_key)
+
+				var tmp_item *dist.Item
+
+				ok := true
+
+				if err != nil {
+					ok = false
+				}
+
+				if ok {
+
+					tmp_body, err := ioutil.ReadAll(tmp_fh)
+
+					if err == nil {
+
+						err = json.Unmarshal(tmp_body, &tmp_item)
+
+						if err != nil {
+							ok = false
+						}
+					}
+				}
+
+				if ok {
+
+					if item.Sha256Compressed == tmp_item.Sha256Compressed {
+						publish = false
+					}
+				}
+			}
+
+			if publish {
+
+				err := PublishItem(item, opts)
+
+				if err != nil {
+					log.Printf("Failed to publish %s %s\n", item.Name, err)
+				}
 			}
 
 		}(item)

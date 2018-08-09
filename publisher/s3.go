@@ -78,6 +78,11 @@ func NewS3Publisher(cfg *s3.S3Config) (publish.Publisher, error) {
 	return &p, nil
 }
 
+func (p *S3Publisher) Fetch(key string) (io.ReadCloser, error) {
+
+	return p.conn.Get(key)
+}
+
 func (p *S3Publisher) Publish(fh io.ReadCloser, dest string) error {
 
 	key := fmt.Sprintf("%s#ACL=public-read", dest)
@@ -233,9 +238,9 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 		json_key := fmt.Sprintf("%s/inventory.json", t)
 
 		// please rename to something more generic than HTMLVars
-		// because we're also going to (eventually) pass it to the 
+		// because we're also going to (eventually) pass it to the
 		// feed templates
-		
+
 		vars := HTMLVars{
 			Date:  now.Format(time.RFC3339),
 			Type:  t,
