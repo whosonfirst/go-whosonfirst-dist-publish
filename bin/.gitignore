@@ -1,2 +1,3 @@
 wof-*
 cmd
+go-bindata
