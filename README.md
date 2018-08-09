@@ -25,6 +25,7 @@ LIST_REPOS="/usr/local/whosonfirst/go-whosonfirst-github/bin/wof-list-repos"
 BUILD_DIST="/usr/local/whosonfirst/go-whosonfirst-dist/bin/wof-dist-build"
 PUBLISH_DIST="/usr/local/whosonfirst/go-whosonfirst-dist-publish/bin/wof-dist-publish"
 PRUNE_DIST="/usr/local/whosonfirst/go-whosonfirst-dist-publish/bin/wof-dist-prune"
+INDEX_DIST="/usr/local/whosonfirst/go-whosonfirst-dist-publish/bin/wof-dist-index"
 
 PUBLISHER="s3"
 
@@ -39,6 +40,19 @@ S3_PREFIX="test"
 S3_CREDENTIALS="iam:"
 
 WORKDIR="/usr/local/data/dist"
+LOCKFILE="${WORKDIR}/.lock"
+
+if [ -f ${LOCKFILE} ]
+then
+    echo "lockfile is present, exiting"
+    exit 1
+fi
+
+rm -rf ${WORKDIR}/*
+echo `date` > ${LOCKFILE}
+   
+# for REPO in whosonfirst-data-constituency-ca
+# TO DO: check length of $@ (... is it $@) and if empty then invoke this:
 
 for REPO in `${LIST_REPOS} -not-forked -updated-since P1D`
 do
@@ -56,8 +70,9 @@ done
 echo "prune distributions"
 
 ${PRUNE_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
-    
-echo "INDEX ME... (translation: please write me)"
+${INDEX_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+
+rm -f ${LOCKFILE}
 ```
 
 ## See also:
