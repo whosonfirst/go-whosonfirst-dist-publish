@@ -197,7 +197,7 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 
 func (p *S3Publisher) Index(r repo.Repo) error {
 
-	items, err := p.buildIndex(r)
+	items, err := p.BuildIndex(r)
 
 	if err != nil {
 		return err
@@ -308,7 +308,7 @@ func (p *S3Publisher) Index(r repo.Repo) error {
 
 // maybe make this part of the required interface and public ?
 
-func (p *S3Publisher) buildIndex(r repo.Repo) (map[string][]*dist.Item, error) {
+func (p *S3Publisher) BuildIndex(r repo.Repo) (map[string][]*dist.Item, error) {
 
 	items := make(map[string][]*dist.Item)
 
