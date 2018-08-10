@@ -26,6 +26,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// THE NEW NEW... BUT NOT YET
+	// err = publisher.Index(p, r)
+	
 	err = p.Index(r)
 
 	if err != nil {
