@@ -9,7 +9,7 @@ import (
 	"github.com/whosonfirst/go-bindata-html-template"
 	"github.com/whosonfirst/go-whosonfirst-aws/s3"
 	"github.com/whosonfirst/go-whosonfirst-dist"
-	"github.com/whosonfirst/go-whosonfirst-dist-publish"
+	_ "github.com/whosonfirst/go-whosonfirst-dist-publish/assets/feed"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish/assets/html"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"io"
@@ -46,12 +46,12 @@ type HTMLVars struct {
 }
 
 type S3Publisher struct {
-	publish.Publisher
+	Publisher
 	conn *s3.S3Connection
 	cfg  *s3.S3Config
 }
 
-func NewS3PublisherFromDSN(dsn string) (publish.Publisher, error) {
+func NewS3PublisherFromDSN(dsn string) (Publisher, error) {
 
 	cfg, err := s3.NewS3ConfigFromString(dsn)
 
@@ -62,7 +62,7 @@ func NewS3PublisherFromDSN(dsn string) (publish.Publisher, error) {
 	return NewS3Publisher(cfg)
 }
 
-func NewS3Publisher(cfg *s3.S3Config) (publish.Publisher, error) {
+func NewS3Publisher(cfg *s3.S3Config) (Publisher, error) {
 
 	conn, err := s3.NewS3Connection(cfg)
 
@@ -76,6 +76,10 @@ func NewS3Publisher(cfg *s3.S3Config) (publish.Publisher, error) {
 	}
 
 	return &p, nil
+}
+
+func (p *S3Publisher) IsNotFound(err error) bool {
+	return s3.IsNotFound(err)
 }
 
 func (p *S3Publisher) Fetch(key string) (io.ReadCloser, error) {

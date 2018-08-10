@@ -46,7 +46,7 @@ func init() {
 
 type PublishOptions struct {
 	Workdir   string
-	Publisher publish.Publisher
+	Publisher publisher.Publisher
 }
 
 func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
@@ -84,6 +84,7 @@ func PublishInventory(inv *dist.Inventory, opts *PublishOptions) error {
 func PublishItem(item *dist.Item, opts *PublishOptions) error {
 
 	if !shouldPublish(item, opts) {
+		log.Println("DO NOT PUBLISH", item.NameCompressed)
 		return nil
 	}
 
@@ -226,7 +227,11 @@ func shouldPublish(item *dist.Item, opts *PublishOptions) bool {
 		ok := true
 
 		if err != nil {
-			log.Printf("failed to fetch %s for comparing with %s: %s\n", tmp_key, item.NameCompressed, err)
+
+			if !opts.Publisher.IsNotFound(err) {
+				log.Printf("failed to fetch %s for comparing with %s: %s\n", tmp_key, item.NameCompressed, err)
+			}
+
 			ok = false
 		}
 
@@ -292,22 +297,10 @@ func main() {
 
 	flag.Parse()
 
-	var p publish.Publisher
+	p, err := publish.NewPublisher(*pub, *dsn)
 
-	switch *pub {
-
-	case "s3":
-
-		s3_p, err := publisher.NewS3PublisherFromDSN(*dsn)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		p = s3_p
-
-	default:
-		log.Fatal("Invalid publisher")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	opts := &PublishOptions{

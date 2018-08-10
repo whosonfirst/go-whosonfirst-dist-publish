@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish"
-	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"log"
 )
@@ -15,22 +14,10 @@ func main() {
 
 	flag.Parse()
 
-	var p publish.Publisher
+	p, err := publish.NewPublisher(*pub, *dsn)
 
-	switch *pub {
-
-	case "s3":
-
-		s3_p, err := publisher.NewS3PublisherFromDSN(*dsn)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		p = s3_p
-
-	default:
-		log.Fatal("Invalid publisher")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	r, err := repo.NewDataRepoFromString("whosonfirst-data")

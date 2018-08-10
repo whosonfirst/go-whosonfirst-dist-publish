@@ -1,13 +1,25 @@
 package publish
 
 import (
-	"github.com/whosonfirst/go-whosonfirst-repo"
-	"io"
+	"errors"
+	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
+	"strings"
 )
 
-type Publisher interface {
-	Publish(io.ReadCloser, string) error
-	Fetch(string) (io.ReadCloser, error)
-	Prune(repo.Repo) error // most likely a string rather than a repo.Repo
-	Index(repo.Repo) error // most likely a string rather than a repo.Repo
+func NewPublisher(name string, dsn string) (publisher.Publisher, error) {
+
+	var p publisher.Publisher
+	var err error
+
+	switch strings.ToUpper(name) {
+
+	case "S3":
+
+		p, err = publisher.NewS3PublisherFromDSN(dsn)
+
+	default:
+		err = errors.New("Unknown or invalid publisher name")
+	}
+
+	return p, err
 }
