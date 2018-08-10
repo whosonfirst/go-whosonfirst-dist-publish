@@ -51,9 +51,14 @@ fi
 rm -rf ${WORKDIR}/*
 echo `date` > ${LOCKFILE}
    
-# TO DO: check length of $@ (... is it $@ ??) and if empty then invoke this:
+TO_PUBLISH=$@
 
-for REPO in `${LIST_REPOS} -not-forked -updated-since P1D`
+if [ "$#" -eq 0 ]
+then
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -updated-since P3D`
+fi
+
+for REPO in ${TO_PUBLISH}
 do
     
     echo "rebuild distributions for ${REPO}"

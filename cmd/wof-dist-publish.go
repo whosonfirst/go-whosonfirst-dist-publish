@@ -130,12 +130,14 @@ func PublishItem(item *dist.Item, opts *PublishOptions) error {
 	err = publishFile(source, dest_ts, opts)
 
 	if err != nil {
+		log.Printf("failed to publish %s, because %s\n", dest_ts, err)
 		return err
 	}
 
 	err = publishFile(source, dest_latest, opts)
 
 	if err != nil {
+		log.Printf("failed to publish %s, because %s\n", dest_latest, err)
 		return err
 	}
 
@@ -277,6 +279,7 @@ func publishFile(source string, dest string, opts *PublishOptions) error {
 
 	defer fh.Close()
 
+	log.Println("PUBLISH FILE", dest)
 	return opts.Publisher.Publish(fh, dest)
 }
 
@@ -285,6 +288,7 @@ func publishBytes(b []byte, dest string, opts *PublishOptions) error {
 	r := bytes.NewReader(b)
 	fh := ioutil.NopCloser(r)
 
+	log.Println("PUBLISH BYTES", dest)
 	return opts.Publisher.Publish(fh, dest)
 }
 
