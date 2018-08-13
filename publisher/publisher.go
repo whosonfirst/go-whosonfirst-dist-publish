@@ -86,7 +86,7 @@ func Index(p Publisher, r repo.Repo) error {
 
 		// index.html
 
-		html_fh, err := renderTemplate(html_tpl, vars)
+		html_fh, err := renderTemplate(html_tpl, vars, false)
 
 		err = p.Publish(html_fh, html_key)
 
@@ -129,7 +129,7 @@ func Index(p Publisher, r repo.Repo) error {
 			return err
 		}
 
-		rss_fh, err := renderTemplate(rss_tpl, vars)
+		rss_fh, err := renderTemplate(rss_tpl, vars, true)
 
 		if err != nil {
 			return err
@@ -152,7 +152,7 @@ func Index(p Publisher, r repo.Repo) error {
 			return err
 		}
 
-		atom_fh, err := renderTemplate(atom_tpl, vars)
+		atom_fh, err := renderTemplate(atom_tpl, vars, true)
 
 		if err != nil {
 			return err
@@ -169,16 +169,25 @@ func Index(p Publisher, r repo.Repo) error {
 	return nil
 }
 
-func renderTemplate(tpl *template.Template, vars interface{}) (io.ReadCloser, error) {
+func renderTemplate(tpl *template.Template, vars interface{}, is_xml bool) (io.ReadCloser, error) {
 
 	var b bytes.Buffer
 	wr := bufio.NewWriter(&b)
+
+	// because we are using html/template and there's no way to not encode '<?'
+	// as '&lt?' because Go is conservative that way... (20180813/thisisaaronland)
+
+	if is_xml {
+		wr.Write([]byte("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"))
+	}
 
 	err := tpl.Execute(wr, vars)
 
 	if err != nil {
 		return nil, err
 	}
+
+	wr.Flush()
 
 	r := bytes.NewReader(b.Bytes())
 	fh := ioutil.NopCloser(r)
