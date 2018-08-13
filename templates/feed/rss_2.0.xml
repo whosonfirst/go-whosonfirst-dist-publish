@@ -6,8 +6,9 @@
     <lastBuildDate>{{ .BuildDate.Format "Mon, 02 Jan 2006 15:04:05 MST" }}</lastBuildDate>
     <description>Who's On First is a gazetteer of all the places.</description>
       {{ range $i, $it := .Items }}    
-    <item>
-      <link>https://dist.whosonfirst.org/{{ .Type }}#{{ $it.NameCompressed }}</link>
+      <item>
+      <guid>https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</guid>      	
+      <link>https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}</link>
       <title>{{ $it.Name }}</title>
       <description>This distribution contains {{ $it.Count | humanize_comma }} Who's On First records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</description>
     </item>

@@ -10,10 +10,10 @@
   </author>
   <subtitle type="text">Who's On First is a gazetter of all the places.</subtitle>
       {{ range $i, $it := .Items }}      
-  <entry>
-    <link type="text/html" href="https://dist.whosonfirst.org/{{ .Type }}#{{ $it.NameCompressed }}" rel="alternate"/>
+      <entry>
+    <id>https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</id>	
+    <link type="text/html" href="https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}" rel="alternate"/>
     <title>{{ $it.Name }}</title>
-    <id>https://dist.whosonfirst.org/{{ .Type }}#{{ $it.Name }}</id>
     <published>{{ $it.LastModified }}</published>
     <updated>{{ $it.LastUpdate }}</updated>
     <content type="text">This distribution contains {{ $it.Count | humanize_comma }} Who's On First records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</content>
