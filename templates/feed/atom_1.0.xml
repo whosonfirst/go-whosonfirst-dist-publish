@@ -1,7 +1,7 @@
 {{ define "feed_atom_10" }}
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:h="http://www.w3.org/1999/xhtml">
   <id>https://dist.whosonfirst.org/{{ .Type }}</id>
-  <title>Who's Of First {{ .Type }} distributions</title>
+  <title>Who's On First {{ .Type }} distributions</title>
   <link href="https://dist.whosonfirst.org/{{ .Type }}/" rel="alternate" title="Who's On First" type="text/html"/>
   <link href="https://dist.whosonfirst.org/{{ .Type }}/atom.xml" rel="self" title="Who's On First" type="application/atom+xml"/>
   <updated>{{ .BuildDate.Format "2006-01-02T15:04:05Z07:00" }}</updated>
