@@ -33,12 +33,6 @@ func init() {
 	re_disttype = regexp.MustCompile(`x\-urn\:([^\:]+)\:([^\:]+)\:([^\#]+)(?:\#(.*))?`)
 }
 
-type HTMLVars struct {
-	Date  string
-	Type  string
-	Items []*dist.Item
-}
-
 type S3Publisher struct {
 	Publisher
 	conn *s3.S3Connection
