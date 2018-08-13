@@ -1,9 +1,19 @@
 package publisher
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/dustin/go-humanize"
+	"github.com/whosonfirst/go-bindata-html-template"
 	"github.com/whosonfirst/go-whosonfirst-dist"
+	_ "github.com/whosonfirst/go-whosonfirst-dist-publish/assets/feed"
+	"github.com/whosonfirst/go-whosonfirst-dist-publish/assets/html"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"io"
+	"io/ioutil"
+	"time"
 )
 
 type Publisher interface {
@@ -14,11 +24,6 @@ type Publisher interface {
 	BuildIndex(repo.Repo) (map[string][]*dist.Item, error)
 	IsNotFound(error) bool
 }
-
-// THIS WILL BE THE NEW NEW...BUT NOT YET
-// (20180810/thisisaaronland)
-
-/*
 
 func Index(p Publisher, r repo.Repo) error {
 
@@ -119,5 +124,3 @@ func Index(p Publisher, r repo.Repo) error {
 
 	return nil
 }
-
-*/

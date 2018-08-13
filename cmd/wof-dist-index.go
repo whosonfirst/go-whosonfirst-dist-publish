@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/whosonfirst/go-whosonfirst-dist-publish"
+	"github.com/whosonfirst/go-whosonfirst-dist-publish/publisher"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"log"
 )
@@ -26,10 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// THE NEW NEW... BUT NOT YET
-	// err = publisher.Index(p, r)
-	
-	err = p.Index(r)
+	err = publisher.Index(p, r)
 
 	if err != nil {
 		log.Fatal(err)
