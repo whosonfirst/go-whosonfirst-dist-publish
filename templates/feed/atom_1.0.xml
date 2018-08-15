@@ -8,12 +8,12 @@
   <author>
     <name>Who's On First</name>
   </author>
-  <subtitle type="text">Who's On First is a gazetter of all the places.</subtitle>
+  <subtitle type="text">Who's On First is a gazetter of all the places. Note: As of this writing "alt" (or "alternative") files are not included in any of the distributions. If you need that data you will need to clone it directly from the https://github.com/whosonfirst-data GitHub organization.</subtitle>
       {{ range $i, $it := .Items }}      
       <entry>
     <id>https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</id>	
     <link type="text/html" href="https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}" rel="alternate"/>
-    <title>{{ $it.Name }}</title>
+    <title>{{ $it.NameCompressed }}</title>
     <published>{{ $it.LastModified }}</published>
     <updated>{{ $it.LastUpdate }}</updated>
     <content type="text">This distribution contains {{ $it.Count | humanize_comma }} Who's On First records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</content>

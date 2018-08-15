@@ -4,12 +4,12 @@
     <title>Who's On First {{ .Type }} distributions</title>
     <link>https://dist.whosonfirst.org/{{ .Type }}/</link>
     <lastBuildDate>{{ .BuildDate.Format "Mon, 02 Jan 2006 15:04:05 MST" }}</lastBuildDate>
-    <description>Who's On First is a gazetteer of all the places.</description>
+    <description>Who's On First is a gazetteer of all the places. Note: As of this writing "alt" (or "alternative") files are not included in any of the distributions. If you need that data you will need to clone it directly from the https://github.com/whosonfirst-data GitHub organization.</description>
       {{ range $i, $it := .Items }}    
       <item>
       <guid>https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</guid>      	
       <link>https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}</link>
-      <title>{{ $it.Name }}</title>
+      <title>{{ $it.NameCompressed }}</title>
       <description>This distribution contains {{ $it.Count | humanize_comma }} Who's On First records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</description>
     </item>
     {{ end }}
