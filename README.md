@@ -44,19 +44,27 @@ LOCKFILE="${WORKDIR}/.lock"
 
 if [ -f ${LOCKFILE} ]
 then
-    echo "lockfile is present, exiting"
+    echo "lockfile '${LOCKFILE}' is present, exiting"
     exit 1
 fi
 
 rm -rf ${WORKDIR}/*
 echo `date` > ${LOCKFILE}
-   
+
 TO_PUBLISH=$@
 
 if [ "$#" -eq 0 ]
-then
+then   
     TO_PUBLISH=`${LIST_REPOS} -not-forked -updated-since P3D`
 fi
+
+if [ $1 = "all" ]
+then
+    echo "publish all not-forked repos"    
+    TO_PUBLISH=`${LIST_REPOS} -not-forked`
+fi
+
+echo "publish '${TO_PUBLISH}'"
 
 for REPO in ${TO_PUBLISH}
 do
@@ -65,16 +73,43 @@ do
     
     ${BUILD_DIST} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
 
+    if [ $? -ne 0 ]
+    then
+	echo "rebuild failed for ${REPO}"
+	continue
+    fi
+       
     echo "publish distributions for ${REPO}"
     
     ${PUBLISH_DIST} -workdir ${WORKDIR} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" ${REPO}
 
+    if [ $? -ne 0 ]
+    then
+	echo "publish failed for ${REPO}"
+	continue
+    fi
+    
+    echo "prune distributions"
+
+    ${PRUNE_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+
+    if [ $? -ne 0 ]
+    then
+	echo "pruning failed"
+	continue
+    fi
+    
+    echo "index distributions"
+    
+    ${INDEX_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+
+    if [ $? -ne 0 ]
+    then
+	echo "indexing failed"
+	continue
+    fi
+    
 done
-
-echo "prune distributions"
-
-${PRUNE_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
-${INDEX_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
 
 rm -f ${LOCKFILE}
 ```
