@@ -42,6 +42,8 @@ S3_CREDENTIALS="iam:"
 WORKDIR="/usr/local/data/dist"
 LOCKFILE="${WORKDIR}/.lock"
 
+SINCE="P1D"
+
 if [ -f ${LOCKFILE} ]
 then
     echo "lockfile '${LOCKFILE}' is present, exiting"
@@ -55,10 +57,10 @@ TO_PUBLISH=$@
 
 if [ "$#" -eq 0 ]
 then   
-    TO_PUBLISH=`${LIST_REPOS} -not-forked -updated-since P3D`
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -updated-since ${SINCE}`
 fi
 
-if [ $1 = "all" ]
+if [ "$1" = "all" ]
 then
     echo "publish all not-forked repos"    
     TO_PUBLISH=`${LIST_REPOS} -not-forked`
