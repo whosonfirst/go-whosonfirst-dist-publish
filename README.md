@@ -42,6 +42,7 @@ S3_CREDENTIALS="iam:"
 WORKDIR="/usr/local/data/dist"
 LOCKFILE="${WORKDIR}/.lock"
 
+SINCEFILE="/usr/local/data/dist.txt"
 SINCE="P1D"
 
 if [ -f ${LOCKFILE} ]
@@ -49,6 +50,14 @@ then
     echo "lockfile '${LOCKFILE}' is present, exiting"
     exit 1
 fi
+
+if [ -f ${SINCEFILE} ]
+then
+    SINCE=`cat ${SINCEFILE}`
+    echo "SINCE FROM SINCEFILE ${SINCE}"
+fi
+
+echo `date '+%s'` > ${SINCEFILE}
 
 rm -rf ${WORKDIR}/*
 echo `date` > ${LOCKFILE}
