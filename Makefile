@@ -50,3 +50,4 @@ bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-publish cmd/wof-dist-publish.go
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-prune cmd/wof-dist-prune.go
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-index cmd/wof-dist-index.go
+	@GOPATH=$(GOPATH) go build -o bin/wof-bundles-index cmd/wof-bundles-index.go
