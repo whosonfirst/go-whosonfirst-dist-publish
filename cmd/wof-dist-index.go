@@ -21,16 +21,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r, err := repo.NewDataRepoFromString("whosonfirst-data")
+	opts, err := publisher.DefaultIndexerOptions()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = publisher.Index(p, r)
+	for _, repo_name := range flag.Args() {
 
-	if err != nil {
-		log.Fatal(err)
+		r, err := repo.NewDataRepoFromString(repo_name)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = publisher.Index(p, r, opts)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-
 }

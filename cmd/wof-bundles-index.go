@@ -65,7 +65,7 @@ func main() {
 	sort.Strings(bundles)
 
 	str_bundles := strings.Join(bundles, "\n")
-	
+
 	r := strings.NewReader(str_bundles)
 	fh := ioutil.NopCloser(r)
 

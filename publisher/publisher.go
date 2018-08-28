@@ -33,7 +33,20 @@ type Publisher interface {
 	IsNotFound(error) bool
 }
 
-func Index(p Publisher, r repo.Repo) error {
+type IndexOptions struct {
+	Publisher string
+}
+
+func DefaultIndexerOptions() (*IndexOptions, error) {
+
+	opts := IndexOptions{
+		Publisher: "Who's On First",
+	}
+
+	return &opts, nil
+}
+
+func Index(p Publisher, r repo.Repo, opts *IndexOptions) error {
 
 	items, err := p.BuildIndex(r)
 
