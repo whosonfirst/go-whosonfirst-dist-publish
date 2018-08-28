@@ -3,27 +3,30 @@ package git
 import (
 	"context"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 )
 
-type NativeCloner struct {
-	Cloner
-	git string
+type NativeGitTool struct {
+	GitTool
+	git   string
+	Debug bool
 }
 
-func NewNativeCloner() (Cloner, error) {
+func NewNativeGitTool() (GitTool, error) {
 
 	// check that git binary is present here...
 
-	cl := NativeCloner{
-		git: "git",
+	gt := NativeGitTool{
+		git:   "git",
+		Debug: false,
 	}
 
-	return &cl, nil
+	return &gt, nil
 }
 
-func (cl *NativeCloner) Clone(ctx context.Context, remote string, local string) error {
+func (gt *NativeGitTool) Clone(ctx context.Context, remote string, local string) error {
 
 	select {
 
@@ -40,12 +43,49 @@ func (cl *NativeCloner) Clone(ctx context.Context, remote string, local string) 
 			local,
 		}
 
-		cmd := exec.Command(cl.git, git_args...)
+		cmd := exec.Command(gt.git, git_args...)
 
-		log.Println(cl.git, strings.Join(git_args, " "))
+		if gt.Debug {
+			log.Println(gt.git, strings.Join(git_args, " "))
+		}
 
 		_, err := cmd.Output()
 
 		return err
 	}
+}
+
+func (gt *NativeGitTool) CommitHash(path string) (string, error) {
+
+	cwd, err := os.Getwd()
+
+	if err != nil {
+		return "", err
+	}
+
+	err = os.Chdir(path)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		os.Chdir(cwd)
+	}()
+
+	git_args := []string{
+		"log",
+		"--pretty=format:%H",
+		"-n",
+		"1",
+	}
+
+	cmd := exec.Command(gt.git, git_args...)
+
+	if gt.Debug {
+		log.Println(gt.git, strings.Join(git_args, " "))
+	}
+
+	hash, err := cmd.Output()
+	return string(hash), err
 }

@@ -6,32 +6,42 @@ import (
 	"github.com/jtacoma/uritemplates"
 	"github.com/whosonfirst/go-whosonfirst-dist/options"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
-type Cloner interface {
+type GitTool interface {
 	Clone(context.Context, string, string) error
+	CommitHash(string) (string, error)
 }
 
-func NewClonerFromOptions(opts *options.BuildOptions) (Cloner, error) {
+func NewGitToolFromOptions(opts *options.BuildOptions) (GitTool, error) {
 
-	var cl Cloner
+	var gt GitTool
 	var err error
 
-	switch opts.Cloner {
+	// the thinking here is that one of two things will happen soon:
+	// either the go-git package will support LFS directly or WOF
+	// will finish the work to standardize on a default file size that
+	// doesn't require LFS - if the latter but not the former happens
+	// first then we'll still need to use go-git and shell out to `git lfs`
+	// when we are processing large files/repos (hello, NZ) but at least
+	// we will have a pure-Go (no shell/exec nonsense) tool for building
+	// distributions - today it still requires that there be a git binary
+	// (201080816/thisisaaronland)
 
-	case "native":
-		cl, err = NewNativeCloner()
-	case "golang":
-		cl, err = NewGolangCloner()
+	switch strings.ToUpper(opts.Cloner) { // it's called Cloner because I haven't updated all that stuff yet (20180823/thisisaaronland)
+
+	case "NATIVE":
+		gt, err = NewNativeGitTool()
 	default:
-		err = errors.New("Invalid cloner")
+		err = errors.New("Invalid Git tool")
 	}
 
-	return cl, err
+	return gt, err
 }
 
-func CloneRepo(ctx context.Context, opts *options.BuildOptions) (string, error) {
+func CloneRepo(ctx context.Context, gt GitTool, opts *options.BuildOptions) (string, error) {
 
 	if opts.Timings {
 		t1 := time.Now()
@@ -67,29 +77,10 @@ func CloneRepo(ctx context.Context, opts *options.BuildOptions) (string, error) 
 
 	local := filepath.Join(opts.Workdir, repo_name)
 
-	// SOMETHING SOMETHING SOMETHING check for presence of git-lfs
-	// (20180604/thisisaaronland)
-
-	cl, err := NewClonerFromOptions(opts)
+	err = gt.Clone(ctx, remote, local)
 
 	if err != nil {
 		return "", err
-	}
-
-	err = cl.Clone(ctx, remote, local)
-
-	if err != nil {
-		return "", err
-	}
-
-	if opts.Cloner != "native" && repo_name == "whosonfirst-data" {
-
-		err = LFSFetchAndCheckout(local, opts)
-
-		if err != nil {
-			return "", err
-		}
-
 	}
 
 	return local, nil
