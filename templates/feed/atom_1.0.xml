@@ -1,22 +1,22 @@
 {{ define "feed_atom_10" }}
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:h="http://www.w3.org/1999/xhtml">
-  <id>https://dist.whosonfirst.org/{{ .Type }}</id>
-  <title>Who's On First {{ .Type }} distributions</title>
-  <link href="https://dist.whosonfirst.org/{{ .Type }}/" rel="alternate" title="Who's On First" type="text/html"/>
-  <link href="https://dist.whosonfirst.org/{{ .Type }}/atom.xml" rel="self" title="Who's On First" type="application/atom+xml"/>
+  <id>{{ .DistributionRootURL }}{{ .Type }}</id>
+  <title>{{ .DistributionName }} {{ .Type }} distributions</title>
+  <link href="{{ .DistributionRootURL }}{{ .Type }}/" rel="alternate" title="{{ .DistributionName }}" type="text/html"/>
+  <link href="{{ .DistributionRootURL }}{{ .Type }}/atom.xml" rel="self" title="{{ .DistributionName }}" type="application/atom+xml"/>
   <updated>{{ .BuildDate.Format "2006-01-02T15:04:05Z07:00" }}</updated>
   <author>
-    <name>Who's On First</name>
+    <name>{{ .DistributionName }}</name>
   </author>
-  <subtitle type="text">Who's On First is a gazetter of all the places. Note: As of this writing "alt" (or "alternative") files are not included in any of the distributions. If you need that data you will need to clone it directly from the https://github.com/whosonfirst-data GitHub organization.</subtitle>
+  <subtitle type="text">{{ .DistributionBlurb }}</subtitle>
       {{ range $i, $it := .Items }}      
       <entry>
-    <id>https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</id>	
-    <link type="text/html" href="https://dist.whosonfirst.org/{{ $.Type }}/{{ $it.NameCompressed }}" rel="alternate"/>
+    <id>{{ .DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</id>	
+    <link type="text/html" href="{{ .DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}" rel="alternate"/>
     <title>{{ $it.NameCompressed }}</title>
     <published>{{ $it.LastModified }}</published>
     <updated>{{ $it.LastUpdate }}</updated>
-    <content type="text">This distribution contains {{ $it.Count | humanize_comma }} Who's On First records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</content>
+    <content type="text">This distribution contains {{ $it.Count | humanize_comma }} {{ .DistributionName }} records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</content>
   </entry>
   {{ end }}
 </feed>{{ end }}
