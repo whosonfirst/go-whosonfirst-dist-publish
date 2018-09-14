@@ -19,10 +19,30 @@ import (
 )
 
 type PublishVars struct {
-	Date      string
-	Type      string
-	Items     []*dist.Item
-	BuildDate time.Time
+	Date                string
+	Type                string
+	Items               []*dist.Item
+	BuildDate           time.Time
+	DistributionName    string
+	DistributionRootURL string
+	DistributionBlurb   string
+}
+
+type IndexOptions struct {
+	DistributionName    string
+	DistributionRootURL string
+	DistributionBlurb   string
+}
+
+func NewDefaultIndexOptions() (*IndexOptions, error) {
+
+	opts := IndexOptions{
+		DistributionName:    "Who's On First",
+		DistributionRootURL: "https://dist.whosonfirst.org/",
+		DistributionBlurb:   `Who's On First is a gazetter of all the places. Note: As of this writing "alt" (or "alternative") files are not included in any of the distributions. If you need that data you will need to clone it directly from the https://github.com/whosonfirst-data GitHub organization.`,
+	}
+
+	return &opts, nil
 }
 
 type PruneOptions struct {
@@ -46,7 +66,7 @@ type Publisher interface {
 	IsNotFound(error) bool
 }
 
-func Index(p Publisher, r repo.Repo) error {
+func Index(p Publisher, r repo.Repo, opts *IndexOptions) error {
 
 	items, err := p.BuildIndex(r)
 
@@ -91,10 +111,13 @@ func Index(p Publisher, r repo.Repo) error {
 		atom_key := fmt.Sprintf("%s/atom.xml", t)
 
 		vars := PublishVars{
-			Date:      now.Format(time.RFC3339),
-			Type:      t,
-			Items:     t_items,
-			BuildDate: now,
+			Date:                now.Format(time.RFC3339),
+			Type:                t,
+			Items:               t_items,
+			BuildDate:           now,
+			DistributionName:    opts.DistributionName,
+			DistributionRootURL: opts.DistributionRootURL,
+			DistributionBlurb:   opts.DistributionBlurb,
 		}
 
 		// index.html
