@@ -25,10 +25,23 @@ type PublishVars struct {
 	BuildDate time.Time
 }
 
+type PruneOptions struct {
+	MaxDistributions int
+}
+
+func NewDefaultPruneOptions() (*PruneOptions, error) {
+
+	opts := PruneOptions{
+		MaxDistributions: 1,
+	}
+
+	return &opts, nil
+}
+
 type Publisher interface {
 	Publish(io.ReadCloser, string) error
 	Fetch(string) (io.ReadCloser, error)
-	Prune(repo.Repo) error // most likely a string rather than a repo.Repo
+	Prune(repo.Repo, *PruneOptions) error // most likely a string rather than a repo.Repo
 	BuildIndex(repo.Repo) (map[string][]*dist.Item, error)
 	IsNotFound(error) bool
 }
