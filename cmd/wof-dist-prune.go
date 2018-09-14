@@ -12,7 +12,7 @@ func main() {
 
 	pub := flag.String("publisher", "s3", "Valid publishers are: s3")
 	dsn := flag.String("publisher-dsn", "", "A valid DSN string for your distribution publisher.")
-	max := flag.Int("max-distributions", 10, "...")
+	max := flag.Int("max-distributions", 10, "The maximum number of revisions (distributions) to keep for a repo.")
 
 	flag.Parse()
 
