@@ -11,12 +11,12 @@
   <subtitle type="text">{{ .DistributionBlurb }}</subtitle>
       {{ range $i, $it := .Items }}      
       <entry>
-    <id>{{ .DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</id>	
-    <link type="text/html" href="{{ .DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}" rel="alternate"/>
+    <id>{{ $.DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</id>	
+    <link type="text/html" href="{{ $.DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}" rel="alternate"/>
     <title>{{ $it.NameCompressed }}</title>
     <published>{{ $it.LastModified }}</published>
     <updated>{{ $it.LastUpdate }}</updated>
-    <content type="text">This distribution contains {{ $it.Count | humanize_comma }} {{ .DistributionName }} records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</content>
+    <content type="text">This distribution contains {{ $it.Count | humanize_comma }} {{ $.DistributionName }} records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</content>
   </entry>
   {{ end }}
 </feed>{{ end }}

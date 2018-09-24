@@ -25,12 +25,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r, err := repo.NewDataRepoFromString("whosonfirst-data")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	opts, err := publisher.NewDefaultIndexOptions()
 
 	if err != nil {
@@ -41,10 +35,18 @@ func main() {
 	opts.DistributionRootURL = *dist_root
 	opts.DistributionBlurb = *dist_blurb
 
-	err = publisher.Index(p, r, opts)
+	for _, prefix := range flag.Args() {
 
-	if err != nil {
-		log.Fatal(err)
+		r, err := repo.NewDataRepoFromString(prefix)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = publisher.Index(p, r, opts)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-
 }

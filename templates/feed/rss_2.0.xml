@@ -7,10 +7,10 @@
     <description>{{ .DistributionBlurb }}</description>
       {{ range $i, $it := .Items }}    
       <item>
-      <guid>{{ .DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</guid>      	
-      <link>{{ .DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}</link>
+      <guid>{{ $.DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}#{{ $it.Sha256Compressed }}</guid>      	
+      <link>{{ $.DistributionRootURL }}{{ $.Type }}/{{ $it.NameCompressed }}</link>
       <title>{{ $it.NameCompressed }}</title>
-      <description>This distribution contains {{ $it.Count | humanize_comma }} {{ .DistributionName }} records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</description>
+      <description>This distribution contains {{ $it.Count | humanize_comma }} {{ $.DistributionName }} records and is {{ $it.SizeCompressed | humanize_bytes }} compressed and {{ $it.Size | humanize_bytes}} uncompressed. It was created {{ $it.LastModified }} and (the data itself) was last updated on {{ $it.LastUpdate }}.</description>
     </item>
     {{ end }}
   </channel>

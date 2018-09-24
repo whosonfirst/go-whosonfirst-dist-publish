@@ -124,6 +124,10 @@ func Index(p Publisher, r repo.Repo, opts *IndexOptions) error {
 
 		html_fh, err := renderTemplate(html_tpl, vars, false)
 
+		if err != nil {
+			return err
+		}
+
 		err = p.Publish(html_fh, html_key)
 
 		if err != nil {
