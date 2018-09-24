@@ -91,9 +91,7 @@ func (p *S3Publisher) Publish(fh io.ReadCloser, dest string) error {
 // THIS NEEDS OPTIONS AND FLAGS
 // IT IS NOT CLEAR THIS NEEDS OR SHOULD BE A repo.Repo THINGY
 
-func (p *S3Publisher) Prune(r repo.Repo) error {
-
-	max_pubs := 10 // sudo make me a config option somewhere...
+func (p *S3Publisher) Prune(r repo.Repo, opts *PruneOptions) error {
 
 	// grouped is a make(map[string]map[string][]*s3.S3Object)
 	// which is not ideal but it's also too soon to optimize...
@@ -127,14 +125,14 @@ func (p *S3Publisher) Prune(r repo.Repo) error {
 
 		count := len(pubdates)
 
-		if count <= max_pubs {
+		if count <= opts.MaxDistributions {
 			continue
 		}
 
 		sort.Sort(sort.Reverse(sort.IntSlice(pubdates)))
 		// log.Println(repo_name, pubdates)
 
-		for i := max_pubs; i < count; i++ {
+		for i := opts.MaxDistributions; i < count; i++ {
 
 			ts := pubdates[i]
 			str_ts := strconv.Itoa(ts)

@@ -19,31 +19,51 @@ import (
 )
 
 type PublishVars struct {
-	Date      string
-	Type      string
-	Items     []*dist.Item
-	BuildDate time.Time
+	Date                string
+	Type                string
+	Items               []*dist.Item
+	BuildDate           time.Time
+	DistributionName    string
+	DistributionRootURL string
+	DistributionBlurb   string
+}
+
+type IndexOptions struct {
+	DistributionName    string
+	DistributionRootURL string
+	DistributionBlurb   string
+}
+
+func NewDefaultIndexOptions() (*IndexOptions, error) {
+
+	opts := IndexOptions{
+		DistributionName:    "Who's On First",
+		DistributionRootURL: "https://dist.whosonfirst.org/",
+		DistributionBlurb:   `Who's On First is a gazetter of all the places. Note: As of this writing "alt" (or "alternative") files are not included in any of the distributions. If you need that data you will need to clone it directly from the https://github.com/whosonfirst-data GitHub organization.`,
+	}
+
+	return &opts, nil
+}
+
+type PruneOptions struct {
+	MaxDistributions int
+}
+
+func NewDefaultPruneOptions() (*PruneOptions, error) {
+
+	opts := PruneOptions{
+		MaxDistributions: 1,
+	}
+
+	return &opts, nil
 }
 
 type Publisher interface {
 	Publish(io.ReadCloser, string) error
 	Fetch(string) (io.ReadCloser, error)
-	Prune(repo.Repo) error // most likely a string rather than a repo.Repo
+	Prune(repo.Repo, *PruneOptions) error // most likely a string rather than a repo.Repo
 	BuildIndex(repo.Repo) (map[string][]*dist.Item, error)
 	IsNotFound(error) bool
-}
-
-type IndexOptions struct {
-	Publisher string
-}
-
-func DefaultIndexerOptions() (*IndexOptions, error) {
-
-	opts := IndexOptions{
-		Publisher: "Who's On First",
-	}
-
-	return &opts, nil
 }
 
 func Index(p Publisher, r repo.Repo, opts *IndexOptions) error {
@@ -91,15 +111,22 @@ func Index(p Publisher, r repo.Repo, opts *IndexOptions) error {
 		atom_key := fmt.Sprintf("%s/atom.xml", t)
 
 		vars := PublishVars{
-			Date:      now.Format(time.RFC3339),
-			Type:      t,
-			Items:     t_items,
-			BuildDate: now,
+			Date:                now.Format(time.RFC3339),
+			Type:                t,
+			Items:               t_items,
+			BuildDate:           now,
+			DistributionName:    opts.DistributionName,
+			DistributionRootURL: opts.DistributionRootURL,
+			DistributionBlurb:   opts.DistributionBlurb,
 		}
 
 		// index.html
 
 		html_fh, err := renderTemplate(html_tpl, vars, false)
+
+		if err != nil {
+			return err
+		}
 
 		err = p.Publish(html_fh, html_key)
 
