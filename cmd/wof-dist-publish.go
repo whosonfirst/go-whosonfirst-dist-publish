@@ -298,6 +298,7 @@ func main() {
 
 	pub := flag.String("publisher", "s3", "Valid publishers are: s3")
 	dsn := flag.String("publisher-dsn", "", "A valid DSN string for your distribution publisher.")
+	custom_repo := flag.Bool("custom-repo", false, "Allow custom repo names")
 
 	flag.Parse()
 
@@ -314,10 +315,17 @@ func main() {
 
 	for _, repo_name := range flag.Args() {
 
-		r, err := repo.NewDataRepoFromString(repo_name)
+		var r repo.Repo
+		var r_err error
 
-		if err != nil {
-			log.Fatal(err)
+		if *custom_repo {
+			r, r_err = repo.NewCustomRepoFromString(repo_name)
+		} else {
+			r, r_err = repo.NewDataRepoFromString(repo_name)
+		}
+
+		if r_err != nil {
+			log.Fatal(r_err)
 		}
 
 		// PLEASE FIX ME... this should be in a library...
