@@ -17,6 +17,8 @@ func main() {
 	dist_root := flag.String("distribution-root-url", "https://dist.whosonfirst.org/", "...")
 	dist_blurb := flag.String("distribution-blurb", `Who's On First is a gazetter of all the places. Note: As of this writing "alt" (or "alternative") files are not included in any of the distributions. If you need that data you will need to clone it directly from the https://github.com/whosonfirst-data GitHub organization.`, "...")
 
+	custom_repo := flag.Bool("custom-repo", false, "Allow custom repo names")
+
 	flag.Parse()
 
 	p, err := publish.NewPublisher(*pub, *dsn)
@@ -37,10 +39,17 @@ func main() {
 
 	for _, prefix := range flag.Args() {
 
-		r, err := repo.NewDataRepoFromString(prefix)
+		var r repo.Repo
+		var r_err error
 
-		if err != nil {
-			log.Fatal(err)
+		if *custom_repo {
+			r, r_err = repo.NewCustomRepoFromString(prefix)
+		} else {
+			r, r_err = repo.NewDataRepoFromString(prefix)
+		}
+
+		if r_err != nil {
+			log.Fatal(r_err)
 		}
 
 		err = publisher.Index(p, r, opts)
