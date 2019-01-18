@@ -10,18 +10,18 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/aaronland/go-string/dsn"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
+	aws_session "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/whosonfirst/go-whosonfirst-aws/session"
 	"github.com/whosonfirst/go-whosonfirst-aws/util"
 	"github.com/whosonfirst/go-whosonfirst-mimetypes"
 	"io"
 	"io/ioutil"
 	"log"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -34,10 +34,11 @@ func ReadCloserFromBytes(b []byte) (io.ReadCloser, error) {
 }
 
 type S3Connection struct {
-	session *session.Session
-	service *s3.S3
-	bucket  string
-	prefix  string
+	session  *aws_session.Session
+	service  *s3.S3
+	uploader *s3manager.Uploader
+	bucket   string
+	prefix   string
 }
 
 type S3Config struct {
@@ -51,6 +52,7 @@ type S3ListOptions struct {
 	Strict  bool
 	Timings bool
 	MaxKeys int64
+	Path    string
 	// Logger log.Logger
 }
 
@@ -97,54 +99,28 @@ func ValidS3CredentialsString() string {
 	return fmt.Sprintf("Valid credential flags are: %s", strings.Join(valid, ", "))
 }
 
-func NewS3ConfigFromString(str_config string) (*S3Config, error) {
+func NewS3ConfigFromString(str_dsn string) (*S3Config, error) {
+
+	dsn_map, err := dsn.StringToDSNWithKeys(str_dsn, "bucket", "region", "credentials")
+
+	if err != nil {
+		return nil, err
+	}
+
+	bucket, _ := dsn_map["bucket"]
+	region, _ := dsn_map["region"]
+	credentials, _ := dsn_map["credentials"]
 
 	config := S3Config{
-		Bucket:      "",
-		Prefix:      "",
-		Region:      "",
-		Credentials: "",
+		Bucket:      bucket,
+		Region:      region,
+		Credentials: credentials,
 	}
 
-	str_config = strings.Trim(str_config, " ")
+	prefix, ok := dsn_map["prefix"]
 
-	if str_config != "" {
-		parts := strings.Split(str_config, " ")
-
-		for _, p := range parts {
-
-			p = strings.Trim(p, " ")
-			kv := strings.Split(p, "=")
-
-			if len(kv) != 2 {
-				return nil, errors.New("Invalid count for config block")
-			}
-
-			switch kv[0] {
-			case "bucket":
-				config.Bucket = kv[1]
-			case "prefix":
-				config.Prefix = kv[1]
-			case "region":
-				config.Region = kv[1]
-			case "credentials":
-				config.Credentials = kv[1]
-			default:
-				return nil, errors.New("Invalid key for config block")
-			}
-		}
-	}
-
-	if config.Bucket == "" {
-		return nil, errors.New("Missing bucket config")
-	}
-
-	if config.Region == "" {
-		return nil, errors.New("Missing region config")
-	}
-
-	if config.Credentials == "" {
-		return nil, errors.New("Missing credentials config")
+	if ok {
+		config.Prefix = prefix
 	}
 
 	return &config, nil
@@ -159,80 +135,22 @@ func NewS3Connection(s3cfg *S3Config) (*S3Connection, error) {
 	// https://docs.aws.amazon.com/sdk-for-go/v1/developerguide/configuring-sdk.html
 	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/
 
-	cfg := aws.NewConfig()
-	cfg.WithRegion(s3cfg.Region)
+	sess, err := session.NewSessionWithCredentials(s3cfg.Credentials, s3cfg.Region)
 
-	if strings.HasPrefix(s3cfg.Credentials, "env:") {
-
-		creds := credentials.NewEnvCredentials()
-		cfg.WithCredentials(creds)
-
-	} else if strings.HasPrefix(s3cfg.Credentials, "iam:") {
-
-		// assume an IAM role suffient for doing whatever
-
-	} else if s3cfg.Credentials != "" {
-
-		details := strings.Split(s3cfg.Credentials, ":")
-
-		var creds_file string
-		var profile string
-
-		if len(details) == 1 {
-
-			whoami, err := user.Current()
-
-			if err != nil {
-				return nil, err
-			}
-
-			dotaws := filepath.Join(whoami.HomeDir, ".aws")
-			creds_file = filepath.Join(dotaws, "credentials")
-
-			profile = details[0]
-
-		} else {
-
-			path, err := filepath.Abs(details[0])
-
-			if err != nil {
-				return nil, err
-			}
-
-			creds_file = path
-			profile = details[1]
-		}
-
-		creds := credentials.NewSharedCredentials(creds_file, profile)
-		cfg.WithCredentials(creds)
-
-	} else {
-
-		// for backwards compatibility as of 05a6042dc5956c13513bdc5ab4969877013f795c
-		// (20161203/thisisaaronland)
-
-		creds := credentials.NewEnvCredentials()
-		cfg.WithCredentials(creds)
-	}
-
-	sess := session.New(cfg)
-
-	if s3cfg.Credentials != "" {
-
-		_, err := sess.Config.Credentials.Get()
-
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	service := s3.New(sess)
 
+	uploader := s3manager.NewUploader(sess)
+
 	c := S3Connection{
-		session: sess,
-		service: service,
-		bucket:  s3cfg.Bucket,
-		prefix:  s3cfg.Prefix,
+		session:  sess,
+		service:  service,
+		uploader: uploader,
+		bucket:   s3cfg.Bucket,
+		prefix:   s3cfg.Prefix,
 	}
 
 	return &c, nil
@@ -318,8 +236,6 @@ func (conn *S3Connection) Put(key string, fh io.ReadCloser, args ...interface{})
 	key = parsed[0]
 	key = conn.prepareKey(key)
 
-	uploader := s3manager.NewUploader(conn.session)
-
 	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/s3manager/#UploadInput
 
 	params := s3manager.UploadInput{
@@ -364,7 +280,7 @@ func (conn *S3Connection) Put(key string, fh io.ReadCloser, args ...interface{})
 		}
 	}
 
-	_, err := uploader.Upload(&params)
+	_, err := conn.uploader.Upload(&params)
 	return err
 }
 
@@ -395,6 +311,30 @@ func (conn *S3Connection) Delete(key string) error {
 	}
 
 	return nil
+}
+
+func (conn *S3Connection) DeleteRecursive(path string) error {
+
+	opts := DefaultS3ListOptions()
+	// opts.Timings = *timings
+	opts.Path = path
+
+	cb := func(obj *S3Object) error {
+
+		if obj.Key == path {
+			return nil
+		}
+
+		return conn.DeleteRecursive(obj.Key)
+	}
+
+	err := conn.List(cb, opts)
+
+	if err != nil {
+		return err
+	}
+
+	return conn.Delete(path)
 }
 
 func (conn *S3Connection) SetACLForBucket(acl string, opts *S3ListOptions) error {
@@ -460,9 +400,15 @@ func (conn *S3Connection) List(cb S3ListCallback, opts *S3ListOptions) error {
 		}()
 	}
 
+	prefix := conn.prefix
+
+	if opts.Path != "" {
+		prefix = filepath.Join(prefix, opts.Path)
+	}
+
 	params := &s3.ListObjectsInput{
 		Bucket:  aws.String(conn.bucket),
-		Prefix:  aws.String(conn.prefix),
+		Prefix:  aws.String(prefix),
 		MaxKeys: aws.Int64(opts.MaxKeys),
 		// Delimiter: "baz",
 	}

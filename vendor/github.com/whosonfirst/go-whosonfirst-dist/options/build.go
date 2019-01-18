@@ -31,9 +31,9 @@ type BuildOptions struct {
 	CompressMeta     bool
 	CompressBundle   bool
 	CompressMaxCPUs  int
-
-	Timings bool
-	Strict  bool
+	CustomRepo       bool
+	Timings          bool
+	Strict           bool
 }
 
 func NewBuildOptions() *BuildOptions {
@@ -41,6 +41,10 @@ func NewBuildOptions() *BuildOptions {
 	logger := log.SimpleWOFLogger()
 
 	max_cpus := int(float64(runtime.NumCPU()) / 2.0)
+
+	if max_cpus < 1 {
+		max_cpus = 1
+	}
 
 	opts := BuildOptions{
 		Cloner:           "native",
@@ -59,6 +63,7 @@ func NewBuildOptions() *BuildOptions {
 		PreserveSQLite:   false,
 		PreserveMeta:     false,
 		PreserveBundle:   false,
+		CustomRepo:       false,
 		CompressSQLite:   true,
 		CompressMeta:     true,
 		CompressBundle:   true,
@@ -93,6 +98,7 @@ func (opts *BuildOptions) Clone() *BuildOptions {
 		CompressMeta:     opts.CompressMeta,
 		CompressBundle:   opts.CompressBundle,
 		CompressMaxCPUs:  opts.CompressMaxCPUs,
+		CustomRepo:       opts.CustomRepo,
 		Timings:          opts.Timings,
 		Strict:           opts.Strict,
 	}

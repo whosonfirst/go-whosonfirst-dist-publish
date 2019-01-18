@@ -3,18 +3,30 @@ package hash
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"io/ioutil"
+	"io"
+	"os"
 )
 
 func HashFile(path string) (string, error) {
 
-	body, err := ioutil.ReadFile(path)
+	fh, err := os.Open(path)
 
 	if err != nil {
 		return "", err
 	}
 
-	return HashBytes(body)
+	h := sha256.New()
+
+	_, err = io.Copy(h, fh)
+
+	if err != nil {
+		return "", err
+	}
+
+	hash := h.Sum(nil)
+	str := hex.EncodeToString(hash[:])
+
+	return str, nil
 }
 
 func HashBytes(body []byte) (string, error) {

@@ -20,7 +20,7 @@ build:	fmt bin
 deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-dist"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-repo"
-	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-aws/..."
+	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-aws"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-bindata"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-bindata-html-template"
 	@GOPATH=$(GOPATH) go get -u "github.com/dustin/go-humanize"

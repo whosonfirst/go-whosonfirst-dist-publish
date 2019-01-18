@@ -8,6 +8,7 @@ import (
 	"github.com/tidwall/pretty"
 	"github.com/whosonfirst/go-whosonfirst-dist/build"
 	"github.com/whosonfirst/go-whosonfirst-dist/options"
+	"github.com/whosonfirst/go-whosonfirst-dist/utils"
 	"github.com/whosonfirst/go-whosonfirst-log"
 	"github.com/whosonfirst/go-whosonfirst-repo"
 	"io"
@@ -33,7 +34,7 @@ func main() {
 	*/
 
 	build_meta := flag.Bool("build-meta", opts.Meta, "Build meta files for a repo")
-	build_bundle := flag.Bool("build-bundle", opts.Bundle, "Build a bundle distribution for a repo (this flag is enabled but will fail because the code hasn't been implemented)")
+	build_bundle := flag.Bool("build-bundle", opts.Bundle, "Build a bundle distribution for a repo.")
 	// build_shapefile := flag.Bool("build-shapefile", true, "...")
 
 	compress_sqlite := flag.Bool("compress-sqlite", opts.CompressSQLite, "...")
@@ -56,6 +57,8 @@ func main() {
 
 	local_checkout := flag.Bool("local-checkout", opts.LocalCheckout, "Do not fetch a repo from a remote source but instead use a local checkout on disk")
 	local_sqlite := flag.Bool("local-sqlite", opts.LocalSQLite, "Do not build a new SQLite database but use a pre-existing database on disk (this expects to find the database at the same path it would be stored if the database were created from scratch)")
+
+	custom_repo := flag.Bool("custom-repo", false, "Allow custom repo names")
 
 	// PLEASE MAKE ME WORK, YEAH... (20180704/thisisaaronland)
 	// remote_sqlite := flag.Bool("remote-sqlite", false, "Do not build a new SQLite database but use a pre-existing database that is stored (on dist.whosonfirst.org for now)")
@@ -162,6 +165,8 @@ func main() {
 	opts.PreserveMeta = *preserve_meta
 	opts.PreserveBundle = *preserve_bundle
 
+	opts.CustomRepo = *custom_repo
+
 	opts.Strict = *strict
 	opts.Timings = *timings
 
@@ -169,15 +174,7 @@ func main() {
 
 	for _, repo_name := range flag.Args() {
 
-		var r repo.Repo
-		var err error
-
-		if opts.LocalCheckout {
-			opts := repo.DefaultFilenameOptions()
-			r, err = repo.NewDataRepoFromPath(repo_name, opts)
-		} else {
-			r, err = repo.NewDataRepoFromString(repo_name)
-		}
+		r, err := utils.NewRepo(repo_name, opts)
 
 		if err != nil {
 			logger.Fatal("Failed to parse repo '%s', because %s", repo_name, err)
@@ -188,6 +185,20 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	/*
+
+		why isn't this triggering a fatal error?
+		(20181120/thisisaronland)
+
+		17:12:56.057646 [wof-dist-build] STATUS time to index geojson (797797) : 1m44.498260642s
+		17:12:56.057658 [wof-dist-build] STATUS time to index spr (797797) : 13m8.030653553s
+		17:12:56.057671 [wof-dist-build] STATUS time to index all (797797) : 49m0.145189371s
+		error: Failed to parse tag
+		17:13:07.565161 [wof-dist-build] STATUS local sqlite is /usr/local/data/dist/whosonfirst-data-latest.db
+		17:47:19.212743 [wof-dist-build] STATUS time to build UNCOMPRESSED distributions for whosonfirst-data 2h12m22.305771409s
+
+	*/
 
 	distribution_items, err := build.BuildDistributionsForRepos(ctx, opts, repos...)
 

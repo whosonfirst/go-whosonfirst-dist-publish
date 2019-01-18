@@ -30,11 +30,13 @@ build:	fmt bin
 
 deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/jtacoma/uritemplates"
+	@GOPATH=$(GOPATH) go get -u "github.com/mholt/archiver"
 	@GOPATH=$(GOPATH) go get -u "github.com/tidwall/pretty"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-meta"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-sqlite-features"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-repo"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-bundles"
+	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/atomicfile"
 	mv src/github.com/whosonfirst/go-whosonfirst-sqlite-features/vendor/github.com/whosonfirst/go-whosonfirst-sqlite src/github.com/whosonfirst/
 	mv src/github.com/whosonfirst/go-whosonfirst-sqlite-features/vendor/github.com/whosonfirst/go-whosonfirst-index src/github.com/whosonfirst/
 	mv src/github.com/whosonfirst/go-whosonfirst-sqlite-features/vendor/github.com/whosonfirst/go-whosonfirst-log src/github.com/whosonfirst/
@@ -48,6 +50,7 @@ deps:
 	rm -rf src/github.com/whosonfirst/go-whosonfirst-bundles/vendor/github.com/whosonfirst/go-whosonfirst-meta
 	rm -rf src/github.com/whosonfirst/go-whosonfirst-bundles/vendor/github.com/whosonfirst/go-whosonfirst-index
 	rm -rf src/github.com/whosonfirst/go-whosonfirst-bundles/vendor/github.com/whosonfirst/go-whosonfirst-sqlite
+	rm -rf src/github.com/mholt/archiver/testdata
 
 vendor-deps: rmdeps deps
 	if test -d vendor; then rm -rf vendor; fi
@@ -69,5 +72,6 @@ fmt:
 	go fmt utils/*.go
 
 bin: 	self
+	rm -rf bin/*
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-build cmd/wof-dist-build.go
 	@GOPATH=$(GOPATH) go build -o bin/wof-dist-fetch cmd/wof-dist-fetch.go
