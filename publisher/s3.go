@@ -26,7 +26,7 @@ func init() {
 	// whosonfirst-data-venue-us-ca-1533149830.tar.bz2
 	// whosonfirst-data-venue-us-ny-latest.db.bz2
 
-	re_distname = regexp.MustCompile(`([a-z\-]+)\-(\d+|latest)\..*$`)
+	re_distname = regexp.MustCompile(`([a-z\-0-9]+)\-(\d+|latest)\..*$`)
 
 	// this needs to be moved in to go-whosonfirst-dist
 
