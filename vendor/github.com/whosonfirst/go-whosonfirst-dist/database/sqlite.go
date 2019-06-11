@@ -7,7 +7,7 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-dist/options"
 	"github.com/whosonfirst/go-whosonfirst-dist/utils"
 	"github.com/whosonfirst/go-whosonfirst-repo"
-	"github.com/whosonfirst/go-whosonfirst-sqlite-features/index"
+	"github.com/whosonfirst/go-whosonfirst-sqlite-features-index"
 	"github.com/whosonfirst/go-whosonfirst-sqlite-features/tables"
 	"github.com/whosonfirst/go-whosonfirst-sqlite/database"
 	"os"
@@ -73,13 +73,13 @@ func (c *SQLiteCompressedDistribution) Hash() string {
 	return c.hash
 }
 
-func BuildSQLite(ctx context.Context, local_repo string, opts *options.BuildOptions) (dist.Distribution, error) {
+func BuildSQLite(ctx context.Context, opts *options.BuildOptions, local_repos ...string) (dist.Distribution, error) {
 
 	// ADD HOOKS FOR -spatial and -search databases... (20180216/thisisaaronland)
-	return BuildSQLiteCommon(ctx, local_repo, opts)
+	return BuildSQLiteCommon(ctx, opts, local_repos...)
 }
 
-func BuildSQLiteCommon(ctx context.Context, local_repo string, opts *options.BuildOptions) (dist.Distribution, error) {
+func BuildSQLiteCommon(ctx context.Context, opts *options.BuildOptions, local_repos ...string) (dist.Distribution, error) {
 
 	select {
 	case <-ctx.Done():
@@ -98,10 +98,16 @@ func BuildSQLiteCommon(ctx context.Context, local_repo string, opts *options.Bui
 		}()
 	}
 
-	f_opts := repo.DefaultFilenameOptions()
-	fname := opts.Repo.SQLiteFilename(f_opts)
+	dsn_repo, err := options.DistributionRepoFromOptions(opts)
 
-	dsn := filepath.Join(opts.Workdir, fname)
+	if err != nil {
+		return nil, err
+	}
+
+	dsn_opts := repo.DefaultFilenameOptions()
+	dsn_fname := dsn_repo.SQLiteFilename(dsn_opts)
+
+	dsn := filepath.Join(opts.Workdir, dsn_fname)
 
 	db, err := database.NewDBWithDriver("sqlite3", dsn)
 
@@ -117,7 +123,19 @@ func BuildSQLiteCommon(ctx context.Context, local_repo string, opts *options.Bui
 		return nil, err
 	}
 
-	to_index, err := tables.CommonTablesWithDatabase(db)
+	geojson_opts, err := tables.DefaultGeoJSONTableOptions()
+
+	if err != nil {
+		return nil, err
+	}
+
+	geojson_opts.IndexAltFiles = opts.IndexAltFiles
+
+	table_opts := &tables.CommonTablesOptions{
+		GeoJSON: geojson_opts,
+	}
+
+	to_index, err := tables.CommonTablesWithDatabaseAndOptions(db, table_opts)
 
 	if err != nil {
 		return nil, err
@@ -147,7 +165,7 @@ func BuildSQLiteCommon(ctx context.Context, local_repo string, opts *options.Bui
 	idx.Timings = opts.Timings
 	idx.Logger = opts.Logger
 
-	err = idx.IndexPaths("repo", []string{local_repo})
+	err = idx.IndexPaths("repo", local_repos)
 
 	if err != nil {
 		return nil, err

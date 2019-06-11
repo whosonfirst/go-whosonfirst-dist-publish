@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -55,37 +56,61 @@ func (gt *NativeGitTool) Clone(ctx context.Context, remote string, local string)
 	}
 }
 
-func (gt *NativeGitTool) CommitHash(path string) (string, error) {
+func (gt *NativeGitTool) CommitHashes(paths ...string) (map[string]string, error) {
 
-	cwd, err := os.Getwd()
+	hashes := make(map[string]string)
 
-	if err != nil {
-		return "", err
+	hash_path := func(path string) error {
+
+		cwd, err := os.Getwd()
+
+		if err != nil {
+			return err
+		}
+
+		err = os.Chdir(path)
+
+		if err != nil {
+			return err
+		}
+
+		defer func() {
+			os.Chdir(cwd)
+		}()
+
+		git_args := []string{
+			"log",
+			"--pretty=format:%H",
+			"-n",
+			"1",
+		}
+
+		cmd := exec.Command(gt.git, git_args...)
+
+		if gt.Debug {
+			log.Println(gt.git, strings.Join(git_args, " "))
+		}
+
+		hash, err := cmd.Output()
+
+		if err != nil {
+			return err
+		}
+
+		repo := filepath.Base(path)
+		hashes[repo] = string(hash)
+
+		return nil
 	}
 
-	err = os.Chdir(path)
+	for _, path := range paths {
 
-	if err != nil {
-		return "", err
+		err := hash_path(path)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	defer func() {
-		os.Chdir(cwd)
-	}()
-
-	git_args := []string{
-		"log",
-		"--pretty=format:%H",
-		"-n",
-		"1",
-	}
-
-	cmd := exec.Command(gt.git, git_args...)
-
-	if gt.Debug {
-		log.Println(gt.git, strings.Join(git_args, " "))
-	}
-
-	hash, err := cmd.Output()
-	return string(hash), err
+	return hashes, nil
 }

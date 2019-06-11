@@ -12,6 +12,7 @@ type BuildOptions struct {
 	Source       string
 	Organization string
 	Repo         repo.Repo
+	Repos        []repo.Repo
 	SQLite       bool
 	// these are the new new and will replace "SQLite"
 	// SQLiteCommon     bool
@@ -32,8 +33,11 @@ type BuildOptions struct {
 	CompressBundle   bool
 	CompressMaxCPUs  int
 	CustomRepo       bool
+	Combined         bool
+	CombinedName     string
 	Timings          bool
 	Strict           bool
+	IndexAltFiles    bool
 }
 
 func NewBuildOptions() *BuildOptions {
@@ -52,6 +56,7 @@ func NewBuildOptions() *BuildOptions {
 		Protocol:         "https",
 		Organization:     "whosonfirst-data",
 		Repo:             nil,
+		Repos:            nil,
 		SQLite:           true,
 		Meta:             false,
 		Bundle:           false,
@@ -70,6 +75,9 @@ func NewBuildOptions() *BuildOptions {
 		CompressMaxCPUs:  max_cpus,
 		Timings:          false,
 		Strict:           false,
+		Combined:         false,
+		CombinedName:     "",
+		IndexAltFiles:    false,
 	}
 
 	return &opts
@@ -101,7 +109,25 @@ func (opts *BuildOptions) Clone() *BuildOptions {
 		CustomRepo:       opts.CustomRepo,
 		Timings:          opts.Timings,
 		Strict:           opts.Strict,
+		Combined:         opts.Combined,
+		CombinedName:     opts.CombinedName,
+		IndexAltFiles:    opts.IndexAltFiles,
 	}
 
 	return &clone
+}
+
+func DistributionNameFromOptions(opts *BuildOptions) string {
+
+	if opts.Combined {
+		return opts.CombinedName
+	}
+
+	return opts.Repo.Name()
+}
+
+func DistributionRepoFromOptions(opts *BuildOptions) (repo.Repo, error) {
+
+	name := DistributionNameFromOptions(opts)
+	return repo.NewCustomRepoFromString(name)
 }

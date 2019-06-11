@@ -9,6 +9,7 @@ import (
 	meta "github.com/whosonfirst/go-whosonfirst-meta/build"
 	meta_options "github.com/whosonfirst/go-whosonfirst-meta/options"
 	meta_stats "github.com/whosonfirst/go-whosonfirst-meta/stats"
+	_ "log"
 	"os"
 	"strings"
 	"time"
@@ -72,7 +73,7 @@ func (c *MetaCompressedDistribution) Hash() string {
 	return c.hash
 }
 
-func BuildMetaFiles(ctx context.Context, dist_opts *options.BuildOptions, mode string, source string) ([]dist.Distribution, error) {
+func BuildMetaFiles(ctx context.Context, dist_opts *options.BuildOptions, mode string, sources ...string) ([]dist.Distribution, error) {
 
 	meta_opts, err := meta_options.DefaultBuildOptions()
 
@@ -84,10 +85,18 @@ func BuildMetaFiles(ctx context.Context, dist_opts *options.BuildOptions, mode s
 	meta_opts.Timings = dist_opts.Timings
 	meta_opts.Logger = dist_opts.Logger
 
-	// mode := "sqlite"	// d.Mode() ?
-	// source := []string{ d.Path() }
+	// TBD
+	// go-whosonfirst-meta STILL DOESN'T SUPPORT ALT
+	// FILES BUT NEEDS TO AND WE NEED TO PASS THE INDEX
+	// ALT FILES FLAG (ONCE IT'S BEEN MERGED...)
+	// (20190601/thisisaaronland)
 
-	metafiles, err := meta.BuildFromIndex(meta_opts, mode, []string{source})
+	// meta_opts.IndexAltFiles = dist_opts.IndexAltFile
+
+	meta_opts.Combined = dist_opts.Combined
+	meta_opts.CombinedName = dist_opts.CombinedName
+
+	metafiles, err := meta.BuildFromIndex(meta_opts, mode, sources)
 
 	if err != nil {
 		return nil, err
