@@ -84,7 +84,7 @@ func templatesFeedAtom_10Xml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/feed/atom_1.0.xml", size: 1475, mode: os.FileMode(436), modTime: time.Unix(1537827303, 0)}
+	info := bindataFileInfo{name: "templates/feed/atom_1.0.xml", size: 1475, mode: os.FileMode(420), modTime: time.Unix(1560185831, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -104,7 +104,7 @@ func templatesFeedRss_20Xml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/feed/rss_2.0.xml", size: 1063, mode: os.FileMode(436), modTime: time.Unix(1537827287, 0)}
+	info := bindataFileInfo{name: "templates/feed/rss_2.0.xml", size: 1063, mode: os.FileMode(420), modTime: time.Unix(1560185831, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -162,7 +162,7 @@ func AssetNames() []string {
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
 	"templates/feed/atom_1.0.xml": templatesFeedAtom_10Xml,
-	"templates/feed/rss_2.0.xml":  templatesFeedRss_20Xml,
+	"templates/feed/rss_2.0.xml": templatesFeedRss_20Xml,
 }
 
 // AssetDir returns the file names below a certain
@@ -204,12 +204,11 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
-
 var _bintree = &bintree{nil, map[string]*bintree{
 	"templates": &bintree{nil, map[string]*bintree{
 		"feed": &bintree{nil, map[string]*bintree{
 			"atom_1.0.xml": &bintree{templatesFeedAtom_10Xml, map[string]*bintree{}},
-			"rss_2.0.xml":  &bintree{templatesFeedRss_20Xml, map[string]*bintree{}},
+			"rss_2.0.xml": &bintree{templatesFeedRss_20Xml, map[string]*bintree{}},
 		}},
 	}},
 }}
@@ -260,3 +259,4 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
+
