@@ -4,17 +4,13 @@ Go package for publishing Who's On First distributions.
 
 ## Install
 
-You will need to have both `Go` (specifically a version of Go more recent than 1.6 so let's just assume you need [Go 1.8](https://golang.org/dl/) or higher) and the `make` programs installed on your computer. Assuming you do just type:
+You will need to have both `Go` (version [1.12](https://golang.org/dl/) or higher) and the `make` programs installed on your computer. Assuming you do just type:
 
 ```
-make bin
+make tools
 ```
 
 All of this package's dependencies are bundled with the code in the `vendor` directory.
-
-## Important
-
-This doesn't work yet. Strictly speaking it does work but I might break everything still so all the usual caveats apply.
 
 ## For example
 
