@@ -68,6 +68,8 @@ func (p *BlobPublisher) Fetch(key string) (io.ReadCloser, error) {
 
 func (p *BlobPublisher) Publish(fh io.ReadCloser, dest string) error {
 
+	// ARGH... making S3 things public with Go Cloud... SAD FACE
+	
 	key := fmt.Sprintf("%s#ACL=public-read", dest)
 
 	t1 := time.Now()
@@ -166,7 +168,9 @@ func (p *BlobPublisher) Prune(r repo.Repo, opts *PruneOptions) error {
 
 			key := obj.Key // remember this is *s3.BlobObject Key and _not_ KeyRaw (because of p.conn.prefix)
 
-			err := p.conn.Delete(key)
+			ctx := ctx.Background()
+			
+			err := p.bucket.Delete(ctx, key)
 
 			if err != nil {
 				log.Printf("Failed to delete %s because %s", key, err)
