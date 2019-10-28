@@ -1,18 +1,14 @@
-# github.com/aaronland/go-string v0.1.0
+# github.com/aaronland/go-string v0.1.1
 github.com/aaronland/go-string/dsn
-# github.com/arschles/assert v1.0.0
-github.com/arschles/assert
-# github.com/aws/aws-sdk-go v1.19.31
+# github.com/aws/aws-sdk-go v1.20.21
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
-github.com/aws/aws-sdk-go/aws/credentials
 github.com/aws/aws-sdk-go/aws/session
 github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/service/s3/s3manager
+github.com/aws/aws-sdk-go/aws/credentials
 github.com/aws/aws-sdk-go/aws/endpoints
 github.com/aws/aws-sdk-go/internal/sdkio
-github.com/aws/aws-sdk-go/internal/ini
-github.com/aws/aws-sdk-go/internal/shareddefaults
 github.com/aws/aws-sdk-go/aws/client
 github.com/aws/aws-sdk-go/aws/corehandlers
 github.com/aws/aws-sdk-go/aws/credentials/processcreds
@@ -20,6 +16,8 @@ github.com/aws/aws-sdk-go/aws/credentials/stscreds
 github.com/aws/aws-sdk-go/aws/csm
 github.com/aws/aws-sdk-go/aws/defaults
 github.com/aws/aws-sdk-go/aws/request
+github.com/aws/aws-sdk-go/internal/ini
+github.com/aws/aws-sdk-go/internal/shareddefaults
 github.com/aws/aws-sdk-go/aws/awsutil
 github.com/aws/aws-sdk-go/aws/client/metadata
 github.com/aws/aws-sdk-go/aws/signer/v4
@@ -29,6 +27,7 @@ github.com/aws/aws-sdk-go/private/protocol/eventstream
 github.com/aws/aws-sdk-go/private/protocol/eventstream/eventstreamapi
 github.com/aws/aws-sdk-go/private/protocol/rest
 github.com/aws/aws-sdk-go/private/protocol/restxml
+github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/service/s3/s3iface
 github.com/aws/aws-sdk-go/internal/sdkrand
 github.com/aws/aws-sdk-go/service/sts
@@ -36,156 +35,28 @@ github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds
 github.com/aws/aws-sdk-go/aws/credentials/endpointcreds
 github.com/aws/aws-sdk-go/aws/ec2metadata
 github.com/aws/aws-sdk-go/private/protocol/query
-github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/internal/sdkuri
+github.com/aws/aws-sdk-go/private/protocol/json/jsonutil
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
-# github.com/davecgh/go-spew v1.1.1
-github.com/davecgh/go-spew/spew
-# github.com/dsnet/compress v0.0.1
-github.com/dsnet/compress/bzip2
-github.com/dsnet/compress/bzip2/internal/sais
-github.com/dsnet/compress/internal
-github.com/dsnet/compress/internal/errors
-github.com/dsnet/compress/internal/prefix
-github.com/dsnet/compress
 # github.com/dustin/go-humanize v1.0.0
 github.com/dustin/go-humanize
-# github.com/facebookgo/atomicfile v0.0.0-20151019160806-2de1f203e7d5
-github.com/facebookgo/atomicfile
-# github.com/go-ini/ini v1.42.0
-github.com/go-ini/ini
-# github.com/golang/snappy v0.0.1
-github.com/golang/snappy
-# github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
-github.com/hashicorp/errwrap
-# github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874
-github.com/hashicorp/go-multierror
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
-# github.com/jtacoma/uritemplates v1.0.0
-github.com/jtacoma/uritemplates
-# github.com/mattn/go-sqlite3 v1.10.0
-github.com/mattn/go-sqlite3
-# github.com/mholt/archiver v3.1.1+incompatible
-github.com/mholt/archiver
-# github.com/mmcloughlin/geohash v0.9.0
-github.com/mmcloughlin/geohash
-# github.com/nwaples/rardecode v1.0.0
-github.com/nwaples/rardecode
-# github.com/pierrec/lz4 v2.0.5+incompatible
-github.com/pierrec/lz4
-github.com/pierrec/lz4/internal/xxh32
-# github.com/pmezard/go-difflib v1.0.0
-github.com/pmezard/go-difflib/difflib
-# github.com/skelterjohn/geom v0.0.0-20180103000000-96f3e8a219c5f4276b0dda3568d80c4e02a50116
-github.com/skelterjohn/geom
-# github.com/stretchr/testify v1.3.0
-github.com/stretchr/testify/assert
-# github.com/tidwall/gjson v1.2.1
-github.com/tidwall/gjson
-# github.com/tidwall/match v1.0.1
-github.com/tidwall/match
 # github.com/tidwall/pretty v1.0.0
 github.com/tidwall/pretty
-# github.com/twpayne/go-geom v1.0.5
-github.com/twpayne/go-geom
-github.com/twpayne/go-geom/encoding/geojson
-github.com/twpayne/go-geom/encoding/wkt
-# github.com/ulikunitz/xz v0.5.6
-github.com/ulikunitz/xz
-github.com/ulikunitz/xz/internal/xlog
-github.com/ulikunitz/xz/lzma
-github.com/ulikunitz/xz/internal/hash
-# github.com/whosonfirst/atomicfile v0.0.0-20151019160806-2de1f203e7d5
-github.com/whosonfirst/atomicfile
 # github.com/whosonfirst/go-bindata v0.1.0
 github.com/whosonfirst/go-bindata
 # github.com/whosonfirst/go-bindata-html-template v0.1.0
 github.com/whosonfirst/go-bindata-html-template
-# github.com/whosonfirst/go-rfc-5646 v0.1.0
-github.com/whosonfirst/go-rfc-5646
-# github.com/whosonfirst/go-spatialite v0.0.0-20180220171945-cb1d9ed624a8
-github.com/whosonfirst/go-spatialite
-# github.com/whosonfirst/go-whosonfirst-aws v0.1.0
+# github.com/whosonfirst/go-whosonfirst-aws v0.1.4
 github.com/whosonfirst/go-whosonfirst-aws/s3
-github.com/whosonfirst/go-whosonfirst-aws/util
 github.com/whosonfirst/go-whosonfirst-aws/session
+github.com/whosonfirst/go-whosonfirst-aws/util
 github.com/whosonfirst/go-whosonfirst-aws/config
-# github.com/whosonfirst/go-whosonfirst-bundles v0.1.0
-github.com/whosonfirst/go-whosonfirst-bundles
-# github.com/whosonfirst/go-whosonfirst-cli v0.1.0
-github.com/whosonfirst/go-whosonfirst-cli/flags
-# github.com/whosonfirst/go-whosonfirst-crawl v0.1.0
-github.com/whosonfirst/go-whosonfirst-crawl
-# github.com/whosonfirst/go-whosonfirst-csv v0.1.0
-github.com/whosonfirst/go-whosonfirst-csv
-# github.com/whosonfirst/go-whosonfirst-dist v0.1.0
+# github.com/whosonfirst/go-whosonfirst-dist v0.1.5
 github.com/whosonfirst/go-whosonfirst-dist
-github.com/whosonfirst/go-whosonfirst-dist/csv
-github.com/whosonfirst/go-whosonfirst-dist/database
-github.com/whosonfirst/go-whosonfirst-dist/fs
-github.com/whosonfirst/go-whosonfirst-dist/git
-github.com/whosonfirst/go-whosonfirst-dist/options
-github.com/whosonfirst/go-whosonfirst-dist/build
-github.com/whosonfirst/go-whosonfirst-dist/utils
-github.com/whosonfirst/go-whosonfirst-dist/compress
-github.com/whosonfirst/go-whosonfirst-dist/hash
-# github.com/whosonfirst/go-whosonfirst-flags v0.1.0
-github.com/whosonfirst/go-whosonfirst-flags
-github.com/whosonfirst/go-whosonfirst-flags/existential
-# github.com/whosonfirst/go-whosonfirst-geojson-v2 v0.10.2
-github.com/whosonfirst/go-whosonfirst-geojson-v2
-github.com/whosonfirst/go-whosonfirst-geojson-v2/feature
-github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst
-github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/geometry
-github.com/whosonfirst/go-whosonfirst-geojson-v2/geometry
-github.com/whosonfirst/go-whosonfirst-geojson-v2/utils
-# github.com/whosonfirst/go-whosonfirst-hash v0.1.0
-github.com/whosonfirst/go-whosonfirst-hash
-# github.com/whosonfirst/go-whosonfirst-index v0.1.2
-github.com/whosonfirst/go-whosonfirst-index
-# github.com/whosonfirst/go-whosonfirst-log v0.1.0
-github.com/whosonfirst/go-whosonfirst-log
-# github.com/whosonfirst/go-whosonfirst-meta v0.1.0
-github.com/whosonfirst/go-whosonfirst-meta/build
-github.com/whosonfirst/go-whosonfirst-meta/options
-github.com/whosonfirst/go-whosonfirst-meta/stats
-github.com/whosonfirst/go-whosonfirst-meta
-github.com/whosonfirst/go-whosonfirst-meta/meta
 # github.com/whosonfirst/go-whosonfirst-mimetypes v0.1.0
 github.com/whosonfirst/go-whosonfirst-mimetypes
 github.com/whosonfirst/go-whosonfirst-mimetypes/lookup
-# github.com/whosonfirst/go-whosonfirst-names v0.1.0
-github.com/whosonfirst/go-whosonfirst-names/tags
-github.com/whosonfirst/go-whosonfirst-names
-# github.com/whosonfirst/go-whosonfirst-placetypes v0.1.0
-github.com/whosonfirst/go-whosonfirst-placetypes
-github.com/whosonfirst/go-whosonfirst-placetypes/filter
-github.com/whosonfirst/go-whosonfirst-placetypes/placetypes
 # github.com/whosonfirst/go-whosonfirst-repo v0.1.0
 github.com/whosonfirst/go-whosonfirst-repo
-# github.com/whosonfirst/go-whosonfirst-sources v0.1.0
-github.com/whosonfirst/go-whosonfirst-sources
-github.com/whosonfirst/go-whosonfirst-sources/sources
-# github.com/whosonfirst/go-whosonfirst-spr v0.1.0
-github.com/whosonfirst/go-whosonfirst-spr
-# github.com/whosonfirst/go-whosonfirst-sqlite v0.1.0
-github.com/whosonfirst/go-whosonfirst-sqlite/database
-github.com/whosonfirst/go-whosonfirst-sqlite
-github.com/whosonfirst/go-whosonfirst-sqlite/utils
-# github.com/whosonfirst/go-whosonfirst-sqlite-features v0.2.0
-github.com/whosonfirst/go-whosonfirst-sqlite-features/index
-github.com/whosonfirst/go-whosonfirst-sqlite-features/tables
-github.com/whosonfirst/go-whosonfirst-sqlite-features
-# github.com/whosonfirst/go-whosonfirst-sqlite-features-index v0.0.1
-github.com/whosonfirst/go-whosonfirst-sqlite-features-index
-# github.com/whosonfirst/go-whosonfirst-sqlite-index v0.0.1
-github.com/whosonfirst/go-whosonfirst-sqlite-index
-# github.com/whosonfirst/go-whosonfirst-uri v0.1.0
-github.com/whosonfirst/go-whosonfirst-uri
-# github.com/whosonfirst/walk v0.0.0-20160802000000-c0a349674b73681a7272f5ce6ade8ea28055059f
-github.com/whosonfirst/walk
-# github.com/whosonfirst/warning v0.1.0
-github.com/whosonfirst/warning
-# github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
-github.com/xi2/xz

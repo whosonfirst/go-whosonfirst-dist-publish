@@ -4,15 +4,13 @@ Go package for working with Who's On First distributions.
 
 ## Install
 
-You will need to have both `Go` (specifically [version 1.12](https://golang.org/dl/) or higher because we're using [Go modules](https://github.com/golang/go/wiki/Modules)) and the `make` programs installed on your computer. Assuming you do just type:
+You will need to have both `Go` (specifically [1.12](https://golang.org/dl/) or higher) and the `make` programs installed on your computer. Assuming you do just type:
 
 ```
 make tools
 ```
 
 All of this package's dependencies are bundled with the code in the `vendor` directory.
-
-You will need to manually install the [Git LFS](https://git-lfs.github.com/) dependency for **wof-dist-build**.
 
 ## Important
 
@@ -148,6 +146,8 @@ $> ls -al ./tmp
 ```
 
 #### "Combined" distributions
+
+_IMPORTANT: As of August 2019 the `-index-alt-files` flag will trigger a fatal error pending resolution of [issue #15](https://github.com/whosonfirst/go-whosonfirst-dist/issues/15)._
 
 It is also possible to create a single combined distribution from two or more repos, passing the `-combined` and `-combined-name` flag.
 
